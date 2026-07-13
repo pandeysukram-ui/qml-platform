@@ -1,0 +1,2510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>NEPSE QML Dashboard v2 — Trade With Vibes | nepsevibes.com</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#070b12;--bg2:#0d1520;--bg3:#111c2e;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--text:#c8d8e8;--muted:#6a7f95;--mono:'Share Tech Mono',monospace;--head:'Chakra Petch',sans-serif;--q:#7c6af0;--m:#1ab87a;--l:#e8a030;--bull:#2ecc71;--bear:#e74c3c;--neutral:#f0c040;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--head);min-height:100vh;}
+input,select,textarea{font-family:var(--mono);background:var(--bg3);border:1px solid var(--border2);color:#fff;border-radius:3px;padding:5px 8px;font-size:11px;outline:none;width:100%;}
+input:focus,select:focus{border-color:var(--q);}
+select option{background:var(--bg2);}
+button{font-family:var(--head);cursor:pointer;border:none;border-radius:3px;letter-spacing:1px;font-size:10px;font-weight:600;padding:7px 14px;transition:all .15s;}
+.btn-q{background:var(--q);color:#fff;}.btn-q:hover{background:#6b5de0;}
+.btn-m{background:rgba(26,184,122,0.15);color:var(--m);border:1px solid rgba(26,184,122,0.3);}.btn-m:hover{background:rgba(26,184,122,0.28);}
+.btn-l{background:rgba(232,160,48,0.12);color:var(--l);border:1px solid rgba(232,160,48,0.28);}
+.btn-muted{background:rgba(255,255,255,0.06);color:var(--text);border:1px solid var(--border2);}
+.btn-bear{background:rgba(231,76,60,0.1);color:var(--bear);border:1px solid rgba(231,76,60,0.2);}
+.btn-add{background:rgba(26,184,122,0.15);color:var(--m);border:1px solid rgba(26,184,122,0.3);}
+.btn-del{background:rgba(231,76,60,0.12);color:var(--bear);border:1px solid rgba(231,76,60,0.25);font-size:9px;padding:3px 8px;border-radius:2px;}
+.btn-del-trade{background:transparent;color:var(--muted);border:none;font-size:10px;padding:2px 6px;cursor:pointer;}
+.btn-del-trade:hover{color:var(--bear);}
+/* HEADER */
+.header{background:linear-gradient(90deg,rgba(124,106,240,0.14) 0%,transparent 60%);border-bottom:1px solid var(--border2);padding:11px 20px;display:flex;align-items:center;justify-content:space-between;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:var(--q);box-shadow:0 0 8px var(--q);animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.brand-name{font-size:12px;font-weight:700;letter-spacing:3px;color:#fff;text-transform:uppercase;}
+.brand-sub{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1.5px;}
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border2);background:var(--bg2);padding:0 20px;overflow-x:auto;}
+.tab{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:10px 13px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
+.tab:hover{color:var(--text);}.tab.active{color:#fff;border-bottom-color:var(--q);}
+.tab-panel{display:none;padding:15px 20px;}.tab-panel.active{display:block;}
+/* EXPORT BAR */
+.export-bar{display:flex;gap:7px;align-items:center;margin-bottom:13px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;flex-wrap:wrap;}
+.export-label{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+/* OHLV */
+.ohlv-row{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-bottom:13px;}
+.ohlv-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;position:relative;overflow:hidden;}
+.ohlv-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.ohlv-card.o::before{background:var(--muted);}.ohlv-card.h::before{background:var(--bull);}.ohlv-card.lo::before{background:var(--bear);}.ohlv-card.c::before{background:var(--q);}.ohlv-card.v::before{background:var(--l);}.ohlv-card.d::before{background:var(--neutral);}
+.ohlv-label{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:3px;}
+.ohlv-val{font-family:var(--mono);font-size:16px;font-weight:700;color:#fff;}
+.ohlv-val.bear{color:var(--bear);}.ohlv-val.bull{color:var(--bull);}.ohlv-val.qc{color:var(--q);}
+/* PANEL */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.panel-head{padding:8px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.panel-title{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#fff;}
+.panel-badge{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:2px;background:rgba(255,255,255,0.05);color:var(--muted);}
+/* QML TABLE */
+.qml-table{width:100%;border-collapse:collapse;}
+.qml-table th{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);}
+.qml-table td{padding:5px 10px;font-family:var(--mono);font-size:11px;border-bottom:1px solid rgba(255,255,255,0.03);}
+.tier-q{color:var(--q);font-weight:700;}.tier-m{color:var(--m);font-weight:700;}.tier-l{color:var(--l);font-weight:700;}
+.above{color:var(--bull);}.below{color:var(--bear);}
+.conf-badge{font-size:8px;letter-spacing:1px;padding:2px 6px;border-radius:2px;font-family:var(--mono);}
+.conf-hi{background:rgba(124,106,240,0.18);color:var(--q);border:1px solid rgba(124,106,240,0.3);}
+.conf-md{background:rgba(26,184,122,0.12);color:var(--m);border:1px solid rgba(26,184,122,0.25);}
+.conf-lo{background:rgba(232,160,48,0.1);color:var(--l);border:1px solid rgba(232,160,48,0.22);}
+.cur-row td{background:rgba(255,255,255,0.04)!important;border-top:1px solid rgba(232,160,48,0.3)!important;border-bottom:1px solid rgba(232,160,48,0.3)!important;}
+/* PRICE MAP */
+.pbar{position:relative;background:var(--bg3);border:1px solid var(--border);border-radius:4px;height:310px;width:100%;}
+.bar-level{position:absolute;left:0;right:0;height:1px;display:flex;align-items:center;}
+.bar-line{flex:1;height:1px;}.bar-tag{font-family:var(--mono);font-size:8px;padding:0 5px;white-space:nowrap;background:var(--bg3);}
+.bar-price{font-family:var(--mono);font-size:8px;padding:0 6px 0 3px;white-space:nowrap;background:var(--bg3);}
+.cur-marker{position:absolute;left:0;right:0;height:2px;background:#fff;z-index:10;}
+.cur-tag{position:absolute;right:0;background:#fff;color:#000;font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 5px;border-radius:2px;transform:translateY(-50%);}
+.czone{position:absolute;left:0;right:0;border-radius:2px;}
+/* INDICATORS */
+.ind-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;}
+.ind-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 11px;}
+.ind-name{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+.ind-val{font-family:var(--mono);font-size:17px;font-weight:700;color:#fff;}
+.ind-sig{font-size:8px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-top:3px;}
+.sig-bull{color:var(--bull);}.sig-bear{color:var(--bear);}.sig-neut{color:var(--neutral);}
+.ind-bar-bg{height:3px;background:var(--bg3);border-radius:2px;margin-top:6px;}
+.ind-bar-fill{height:100%;border-radius:2px;}
+/* SETUP */
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.setup-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px 13px;}
+.setup-title{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.setup-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+.setup-row:last-child{border-bottom:none;}
+.setup-key{font-family:var(--mono);font-size:9px;color:var(--muted);}
+.setup-val{font-family:var(--mono);font-size:10px;color:#fff;font-weight:600;}
+.setup-val.bear{color:var(--bear);}.setup-val.bull{color:var(--bull);}.setup-val.neut{color:var(--neutral);}
+/* BIAS */
+.bias-rows{display:flex;flex-direction:column;gap:7px;}
+.bias-row{display:flex;align-items:center;gap:9px;}
+.bias-tier{font-family:var(--mono);font-size:9px;width:32px;font-weight:700;}
+.bias-bg{flex:1;height:6px;background:var(--bg3);border-radius:3px;position:relative;}
+.bias-fill{height:100%;border-radius:3px;position:absolute;top:0;}
+.bias-center{position:absolute;top:-4px;left:50%;width:1px;height:14px;background:var(--border2);}
+.bias-lbl{font-family:var(--mono);font-size:9px;width:56px;text-align:right;}
+/* TRADE PLAN */
+.trade-plan{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--q);border-radius:6px;padding:13px 16px;}
+.trade-plan-title{font-size:9px;font-weight:700;letter-spacing:3px;color:var(--q);text-transform:uppercase;margin-bottom:11px;}
+.tp-row{display:flex;gap:11px;flex-wrap:wrap;}
+.tp-block{flex:1;min-width:90px;}
+.tp-label{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.tp-price{font-family:var(--mono);font-size:14px;font-weight:700;}
+.tp-price.entry{color:var(--l);}.tp-price.sl{color:var(--bear);}.tp-price.tp1{color:var(--m);}.tp-price.tp2{color:var(--q);}
+.tp-note{font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:2px;}
+.tp-div{width:1px;background:var(--border);}
+.rr-badge{margin-top:11px;display:inline-block;background:rgba(124,106,240,0.13);border:1px solid rgba(124,106,240,0.28);border-radius:3px;font-family:var(--mono);font-size:9px;color:var(--q);padding:4px 11px;letter-spacing:1.5px;}
+/* SEC LABEL */
+.sec-label{font-family:var(--mono);font-size:8px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;padding:0 2px 5px;border-bottom:1px solid var(--border);margin-bottom:9px;}
+/* EDIT */
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.edit-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.edit-section-title{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.field-row{display:grid;grid-template-columns:130px 1fr;gap:8px;align-items:center;margin-bottom:8px;}
+.field-label{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;}
+.field-row.full{grid-template-columns:1fr;}
+/* LEVELS */
+.levels-edit-table{width:100%;border-collapse:collapse;}
+.levels-edit-table th{font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;}
+.levels-edit-table td{padding:4px;border-bottom:1px solid rgba(255,255,255,0.03);}
+.levels-edit-table input,.levels-edit-table select{padding:3px 6px;font-size:10px;}
+/* SIGNAL ENGINE */
+.sig-result{display:flex;flex-direction:column;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:13px;text-align:center;}
+.sig-main{font-size:44px;font-weight:700;letter-spacing:4px;line-height:1;}
+.sig-main.long{color:var(--bull);text-shadow:0 0 24px rgba(46,204,113,0.4);}
+.sig-main.short{color:var(--bear);}
+.sig-main.wait{color:var(--neutral);}
+.sig-sub{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:7px;}
+.sig-score{font-family:var(--mono);font-size:12px;font-weight:700;margin-top:5px;}
+.conf-meter{height:5px;background:var(--bg3);border-radius:3px;margin:8px 0 3px;overflow:hidden;width:220px;}
+.conf-fill{height:100%;border-radius:3px;transition:width .5s;}
+.layer-checks{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:13px;}
+.layer-check{background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:9px 11px;display:flex;align-items:center;gap:9px;}
+.check-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.check-dot.pass{background:var(--bull);}.check-dot.fail{background:var(--bear);}.check-dot.warn{background:var(--neutral);}
+.check-label{font-family:var(--mono);font-size:9px;color:var(--muted);}
+.check-val{font-family:var(--mono);font-size:10px;font-weight:700;margin-left:auto;}
+.check-val.pass{color:var(--bull);}.check-val.fail{color:var(--bear);}.check-val.warn{color:var(--neutral);}
+.sig-engine{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.sig-layer{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.sig-layer-title{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.sig-field{display:grid;grid-template-columns:130px 1fr;gap:8px;align-items:center;margin-bottom:8px;}
+.sig-field label{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;}
+/* JOURNAL */
+.jnl-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:13px;}
+.jnl-stat{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 11px;}
+.jnl-stat-label{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:3px;}
+.jnl-stat-val{font-family:var(--mono);font-size:18px;font-weight:700;color:#fff;}
+.jnl-stat-val.bull{color:var(--bull);}.jnl-stat-val.bear{color:var(--bear);}.jnl-stat-val.neut{color:var(--neutral);}
+.jnl-form{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:13px;}
+.jnl-form-title{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--q);margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.jnl-form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:11px;}
+.jnl-form-field{display:flex;flex-direction:column;gap:4px;}
+.jnl-form-field label{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.jnl-rules{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:11px;}
+.jnl-rule{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:8px 10px;cursor:pointer;transition:all .15s;}
+.jnl-rule.yes{background:rgba(46,204,113,0.08);border-color:rgba(46,204,113,0.3);}
+.jnl-rule.no{background:rgba(231,76,60,0.08);border-color:rgba(231,76,60,0.3);}
+.jnl-rule-label{font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:5px;}
+.jnl-rule-btns{display:flex;gap:4px;}
+.jnl-rule-btn{font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:2px;cursor:pointer;border:1px solid var(--border2);background:var(--bg2);color:var(--muted);flex:1;text-align:center;}
+.jnl-rule-btn.active-yes{background:rgba(46,204,113,0.2);color:var(--bull);border-color:rgba(46,204,113,0.4);}
+.jnl-rule-btn.active-no{background:rgba(231,76,60,0.15);color:var(--bear);border-color:rgba(231,76,60,0.3);}
+.jnl-verdict{border-radius:6px;padding:9px 13px;margin-bottom:11px;font-family:var(--mono);font-size:11px;font-weight:700;text-align:center;letter-spacing:1px;}
+.jnl-verdict.system{background:rgba(46,204,113,0.1);color:var(--bull);border:1px solid rgba(46,204,113,0.25);}
+.jnl-verdict.broken{background:rgba(231,76,60,0.1);color:var(--bear);border:1px solid rgba(231,76,60,0.25);}
+.jnl-verdict.partial{background:rgba(240,192,64,0.1);color:var(--neutral);border:1px solid rgba(240,192,64,0.25);}
+.jnl-table{width:100%;border-collapse:collapse;}
+.jnl-table th{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;padding:6px 9px;text-align:left;border-bottom:1px solid var(--border);}
+.jnl-table td{padding:5px 9px;font-family:var(--mono);font-size:10px;border-bottom:1px solid rgba(255,255,255,0.03);}
+.trade-long{color:var(--bull);}.trade-short{color:var(--bear);}
+.pnl-pos{color:var(--bull);}.pnl-neg{color:var(--bear);}
+.sys-badge{font-size:8px;padding:2px 6px;border-radius:2px;font-family:var(--mono);}
+.sys-yes{background:rgba(46,204,113,0.12);color:var(--bull);border:1px solid rgba(46,204,113,0.25);}
+.sys-partial{background:rgba(240,192,64,0.1);color:var(--neutral);border:1px solid rgba(240,192,64,0.2);}
+.sys-no{background:rgba(231,76,60,0.1);color:var(--bear);border:1px solid rgba(231,76,60,0.2);}
+/* POS CALC */
+.pos-calc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:13px;}
+.pos-calc-title{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--m);margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.pos-calc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:11px;}
+.pos-result{background:var(--bg3);border-radius:5px;padding:10px;text-align:center;margin-top:7px;}
+.pos-result-label{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:3px;}
+.pos-result-val{font-family:var(--mono);font-size:19px;font-weight:700;color:var(--m);}
+/* EOD */
+.eod-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.eod-title{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.eod-drop{border:2px dashed var(--border2);border-radius:8px;padding:26px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px;}
+.eod-drop:hover{border-color:var(--q);background:rgba(124,106,240,0.05);}
+.eod-drop.dragover{border-color:var(--m);background:rgba(26,184,122,0.08);}
+.eod-drop-icon{font-size:28px;margin-bottom:7px;}
+.eod-drop-text{font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8;}
+.eod-status{background:var(--bg3);border-radius:6px;padding:10px 12px;margin-bottom:11px;font-family:var(--mono);font-size:10px;}
+.eod-status-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+.eod-status-row:last-child{border-bottom:none;}
+.eod-status-key{color:var(--muted);}
+.eod-status-val{color:#fff;font-weight:600;}
+.eod-status-val.bull{color:var(--bull);}.eod-status-val.bear{color:var(--bear);}.eod-status-val.neut{color:var(--neutral);}
+.eod-table{width:100%;border-collapse:collapse;}
+.eod-table th{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;padding:6px 9px;text-align:left;border-bottom:1px solid var(--border);}
+.eod-table td{padding:5px 9px;font-family:var(--mono);font-size:10px;border-bottom:1px solid rgba(255,255,255,0.03);}
+.range-bull{color:var(--bull);}.range-bear{color:var(--bear);}.range-neut{color:var(--neutral);}
+/* WEEKLY */
+.wk-item{display:flex;align-items:center;gap:10px;padding:8px 9px;border-radius:5px;margin-bottom:5px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);transition:all .15s;}
+.wk-item.done{background:rgba(46,204,113,0.08);border-color:rgba(46,204,113,0.25);}
+.wk-item.done .wk-check{background:var(--bull);border-color:var(--bull);}
+.wk-item.done .wk-text{color:var(--bull);}
+.wk-check{width:17px;height:17px;border-radius:3px;border:1px solid var(--border2);background:var(--bg3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#000;}
+.wk-text{font-family:var(--mono);font-size:10px;color:var(--muted);flex:1;}
+.wk-badge{font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:2px;background:rgba(124,106,240,0.12);color:var(--q);border:1px solid rgba(124,106,240,0.2);}
+/* PLANNER */
+.plan-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px;position:relative;overflow:hidden;}
+.plan-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.plan-card.daily::before{background:var(--l);}.plan-card.weekly::before{background:var(--m);}.plan-card.monthly::before{background:var(--q);}
+.plan-card-title{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:9px;}
+.plan-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+.plan-row:last-child{border-bottom:none;}
+.plan-key{font-family:var(--mono);font-size:9px;color:var(--muted);}
+.plan-val{font-family:var(--mono);font-size:10px;font-weight:700;color:#fff;}
+.plan-val.bull{color:var(--bull);}.plan-val.bear{color:var(--bear);}.plan-val.q{color:var(--q);}.plan-val.m{color:var(--m);}.plan-val.l{color:var(--l);}
+.gann-box{background:var(--bg3);border-radius:5px;padding:9px;text-align:center;border:1px solid var(--border);}
+.gann-box.active{border-color:var(--q);background:rgba(124,106,240,0.1);}
+.gann-days{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:3px;}
+.gann-date{font-family:var(--mono);font-size:10px;font-weight:700;color:#fff;}
+.gann-dist{font-family:var(--mono);font-size:8px;margin-top:2px;}
+.plans-table{width:100%;border-collapse:collapse;}
+.plans-table th{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;padding:6px 9px;text-align:left;border-bottom:1px solid var(--border);}
+.plans-table td{padding:5px 9px;font-family:var(--mono);font-size:10px;border-bottom:1px solid rgba(255,255,255,0.03);}
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg2);border:1px solid var(--border2);border-left:3px solid var(--m);color:#fff;font-family:var(--mono);font-size:11px;padding:8px 15px;border-radius:4px;z-index:999;transform:translateY(60px);opacity:0;transition:all .3s ease;}
+.toast.show{transform:translateY(0);opacity:1;}
+/* FOOTER */
+.footer{border-top:1px solid var(--border);padding:8px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
+.footer-link{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1.5px;text-decoration:none;}
+.footer-link:hover{color:var(--q);}
+.footer-time{font-family:var(--mono);font-size:9px;color:var(--muted);}
+@media print{.tabs,.export-bar,.tab-panel:not(#tab-dashboard){display:none!important;}#tab-dashboard{display:block!important;}}
+</style>
+</head>
+<body>
+<!-- HEADER -->
+<div class="header">
+  <div class="brand">
+    <div class="brand-dot"></div>
+    <div>
+      <div class="brand-name">Trade With Vibes &mdash; nepsevibes.com</div>
+      <div class="brand-sub">QML DASHBOARD v2.0 &middot; NEPSE &middot; ALL 13 SECTORS &middot; AUTO-SAVE</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div style="position:relative;">
+      <input id="quick-search" placeholder="Search... VVC" autocomplete="off"
+        style="width:145px;font-size:11px;padding:7px 10px;text-transform:uppercase;"
+        oninput="qsInput(this.value)" onkeydown="if(event.key==='Enter')qsGo()"
+        onfocus="document.getElementById('qs-dd').style.display='block'"
+        onblur="setTimeout(function(){document.getElementById('qs-dd').style.display='none'},200)">
+      <div id="qs-dd" style="display:none;position:absolute;top:34px;left:0;width:220px;background:var(--bg2);border:1px solid var(--border2);border-radius:4px;z-index:999;max-height:200px;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,0.4);"></div>
+    </div>
+    <select id="scrip-select" onchange="loadPreset(this.value)" style="width:185px;font-size:11px;padding:7px 10px;">
+  <optgroup label="-- Main Index --">
+    <option value="NEPSE">NEPSE Index</option>
+  </optgroup>
+  <optgroup label="-- Banking --">
+    <option value="BANKING">Banking Index</option>
+    <option value="ADBL">ADBL</option>
+    <option value="BOK">BOK</option>
+    <option value="CZBIL">CZBIL</option>
+    <option value="EBL">EBL</option>
+    <option value="GBIME">GBIME</option>
+    <option value="HBL">HBL</option>
+    <option value="KBL">KBL</option>
+    <option value="LSL">LSL</option>
+    <option value="MBL">MBL</option>
+    <option value="NABIL">NABIL</option>
+    <option value="NBL">NBL</option>
+    <option value="NICA">NICA</option>
+    <option value="NIMB">NIMB</option>
+    <option value="NMB">NMB</option>
+    <option value="PCBL">PCBL</option>
+    <option value="PRVU">PRVU</option>
+    <option value="SANIMA">SANIMA</option>
+    <option value="SBI">SBI</option>
+    <option value="SBL">SBL</option>
+    <option value="SCB">SCB</option>
+  </optgroup>
+  <optgroup label="-- Development Bank --">
+    <option value="DEVBANK">Development Bank Index</option>
+    <option value="CORBL">CORBL</option>
+    <option value="EDBL">EDBL</option>
+    <option value="GBBL">GBBL</option>
+    <option value="GRDBL">GRDBL</option>
+    <option value="JBBL">JBBL</option>
+    <option value="KSBBL">KSBBL</option>
+    <option value="LBBL">LBBL</option>
+    <option value="MDB">MDB</option>
+    <option value="MLBL">MLBL</option>
+    <option value="MNBBL">MNBBL</option>
+    <option value="NABBC">NABBC</option>
+    <option value="NESDO">NESDO</option>
+    <option value="SABBL">SABBL</option>
+    <option value="SADBL">SADBL</option>
+    <option value="SAPDBL">SAPDBL</option>
+    <option value="SHINE">SHINE</option>
+    <option value="SINDU">SINDU</option>
+    <option value="SKBBL">SKBBL</option>
+  </optgroup>
+  <optgroup label="-- Finance --">
+    <option value="FINANCE">Finance Index</option>
+    <option value="BFC">BFC</option>
+    <option value="CFCL">CFCL</option>
+    <option value="GFCL">GFCL</option>
+    <option value="GMFIL">GMFIL</option>
+    <option value="GUFL">GUFL</option>
+    <option value="ICFC">ICFC</option>
+    <option value="JFL">JFL</option>
+    <option value="MFIL">MFIL</option>
+    <option value="MPFL">MPFL</option>
+    <option value="NFS">NFS</option>
+    <option value="PROFL">PROFL</option>
+    <option value="RLFL">RLFL</option>
+    <option value="SIFC">SIFC</option>
+  </optgroup>
+  <optgroup label="-- Microfinance --">
+    <option value="MICROFINANCE">Microfinance Index</option>
+    <option value="ACLBSL">ACLBSL</option>
+    <option value="ALBSL">ALBSL</option>
+    <option value="ANLB">ANLB</option>
+    <option value="AVYAN">AVYAN</option>
+    <option value="CBBL">CBBL</option>
+    <option value="CYCL">CYCL</option>
+    <option value="DDBL">DDBL</option>
+    <option value="DLBS">DLBS</option>
+    <option value="FOWAD">FOWAD</option>
+    <option value="GILB">GILB</option>
+    <option value="GLBSL">GLBSL</option>
+    <option value="GMFBS">GMFBS</option>
+    <option value="HLBSL">HLBSL</option>
+    <option value="ILBS">ILBS</option>
+    <option value="JBLB">JBLB</option>
+    <option value="JSLBB">JSLBB</option>
+    <option value="KMCDB">KMCDB</option>
+    <option value="LLBS">LLBS</option>
+    <option value="MATRI">MATRI</option>
+    <option value="MERO">MERO</option>
+    <option value="MLBBL">MLBBL</option>
+    <option value="MLBS">MLBS</option>
+    <option value="MSLB">MSLB</option>
+    <option value="NADEP">NADEP</option>
+    <option value="NICLBSL">NICLBSL</option>
+    <option value="NMBMF">NMBMF</option>
+    <option value="NMFBS">NMFBS</option>
+    <option value="NMLBBL">NMLBBL</option>
+    <option value="NUBL">NUBL</option>
+    <option value="RSDC">RSDC</option>
+    <option value="SKBBL">SKBBL</option>
+    <option value="SLBBL">SLBBL</option>
+    <option value="SLBSL">SLBSL</option>
+    <option value="SMATA">SMATA</option>
+    <option value="SMB">SMB</option>
+    <option value="SMPDA">SMPDA</option>
+    <option value="SWASTIK">SWASTIK</option>
+    <option value="SWBBL">SWBBL</option>
+    <option value="SWMF">SWMF</option>
+    <option value="ULBSL">ULBSL</option>
+    <option value="USLB">USLB</option>
+    <option value="VLBS">VLBS</option>
+    <option value="WNLB">WNLB</option>
+  </optgroup>
+  <optgroup label="-- HydroPower --">
+    <option value="HYDROPOWER">HydroPower Index</option>
+    <option value="AHL">AHL</option>
+    <option value="AHPC">AHPC</option>
+    <option value="AKJCL">AKJCL</option>
+    <option value="AKPL">AKPL</option>
+    <option value="API">API</option>
+    <option value="BARUN">BARUN</option>
+    <option value="BEDC">BEDC</option>
+    <option value="BGWT">BGWT</option>
+    <option value="BHCL">BHCL</option>
+    <option value="BHDC">BHDC</option>
+    <option value="BHPL">BHPL</option>
+    <option value="BJHL">BJHL</option>
+    <option value="BNHC">BNHC</option>
+    <option value="BPCL">BPCL</option>
+    <option value="BUNGAL">BUNGAL</option>
+    <option value="CHCL">CHCL</option>
+    <option value="CHL">CHL</option>
+    <option value="CKHL">CKHL</option>
+    <option value="DHEL">DHEL</option>
+    <option value="DHPL">DHPL</option>
+    <option value="DOLTI">DOLTI</option>
+    <option value="DORDI">DORDI</option>
+    <option value="EHPL">EHPL</option>
+    <option value="GHL">GHL</option>
+    <option value="GLH">GLH</option>
+    <option value="GVL">GVL</option>
+    <option value="HDHPC">HDHPC</option>
+    <option value="HHL">HHL</option>
+    <option value="HIMSTAR">HIMSTAR</option>
+    <option value="HPPL">HPPL</option>
+    <option value="HURJA">HURJA</option>
+    <option value="IHL">IHL</option>
+    <option value="JOSHI">JOSHI</option>
+    <option value="KAHL">KAHL</option>
+    <option value="KBSH">KBSH</option>
+    <option value="KKHC">KKHC</option>
+    <option value="KPCL">KPCL</option>
+    <option value="LEC">LEC</option>
+    <option value="MABEL">MABEL</option>
+    <option value="MAKAR">MAKAR</option>
+    <option value="MANDU">MANDU</option>
+    <option value="MCHL">MCHL</option>
+    <option value="MEHL">MEHL</option>
+    <option value="MEL">MEL</option>
+    <option value="MEN">MEN</option>
+    <option value="MHCL">MHCL</option>
+    <option value="MHL">MHL</option>
+    <option value="MHNL">MHNL</option>
+    <option value="MKHC">MKHC</option>
+    <option value="MKHL">MKHL</option>
+    <option value="MKJC">MKJC</option>
+    <option value="MMKJL">MMKJL</option>
+    <option value="MSHL">MSHL</option>
+    <option value="NGPL">NGPL</option>
+    <option value="NHDL">NHDL</option>
+    <option value="NHPC">NHPC</option>
+    <option value="NYADI">NYADI</option>
+    <option value="PHCL">PHCL</option>
+    <option value="PMHPL">PMHPL</option>
+    <option value="PPCL">PPCL</option>
+    <option value="PPL">PPL</option>
+    <option value="RADHI">RADHI</option>
+    <option value="RAWA">RAWA</option>
+    <option value="RFPL">RFPL</option>
+    <option value="RHGCL">RHGCL</option>
+    <option value="RHPL">RHPL</option>
+    <option value="RIDI">RIDI</option>
+    <option value="RLEL">RLEL</option>
+    <option value="RURU">RURU</option>
+    <option value="SAGAR">SAGAR</option>
+    <option value="SAHAS">SAHAS</option>
+    <option value="SANVI">SANVI</option>
+    <option value="SGHC">SGHC</option>
+    <option value="SGHL">SGHL</option>
+    <option value="SHEL">SHEL</option>
+    <option value="SHPC">SHPC</option>
+    <option value="SIKLES">SIKLES</option>
+    <option value="SIPD">SIPD</option>
+    <option value="SJCL">SJCL</option>
+    <option value="SKHEL">SKHEL</option>
+    <option value="SKHL">SKHL</option>
+    <option value="SMHL">SMHL</option>
+    <option value="SMJC">SMJC</option>
+    <option value="SNORL">SNORL</option>
+    <option value="SOHL">SOHL</option>
+    <option value="SPC">SPC</option>
+    <option value="SPDL">SPDL</option>
+    <option value="SPHL">SPHL</option>
+    <option value="SPL">SPL</option>
+    <option value="SSHL">SSHL</option>
+    <option value="TAMOR">TAMOR</option>
+    <option value="TPC">TPC</option>
+    <option value="TPKHL">TPKHL</option>
+    <option value="TSHL">TSHL</option>
+    <option value="TVCL">TVCL</option>
+    <option value="UHEWA">UHEWA</option>
+    <option value="ULHC">ULHC</option>
+    <option value="UMHL">UMHL</option>
+    <option value="UMRH">UMRH</option>
+    <option value="UNHPL">UNHPL</option>
+    <option value="UPCL">UPCL</option>
+    <option value="UPPER">UPPER</option>
+    <option value="USHEC">USHEC</option>
+    <option value="USHL">USHL</option>
+    <option value="VLUCL">VLUCL</option>
+    <option value="YMHL">YMHL</option>
+  </optgroup>
+  <optgroup label="-- Non-Life Insurance --">
+    <option value="NONLIFEINSU">Non-Life Insurance Index</option>
+    <option value="HEI">HEI</option>
+    <option value="IGI">IGI</option>
+    <option value="NICL">NICL</option>
+    <option value="NIL">NIL</option>
+    <option value="NLG">NLG</option>
+    <option value="NMIC">NMIC</option>
+    <option value="PRIN">PRIN</option>
+    <option value="RBCL">RBCL</option>
+    <option value="SALICO">SALICO</option>
+    <option value="SGIC">SGIC</option>
+    <option value="SICL">SICL</option>
+    <option value="SPIL">SPIL</option>
+    <option value="UAIL">UAIL</option>
+  </optgroup>
+  <optgroup label="-- Life Insurance --">
+    <option value="LIFEINSU">Life Insurance Index</option>
+    <option value="ALICL">ALICL</option>
+    <option value="CLI">CLI</option>
+    <option value="CREST">CREST</option>
+    <option value="GMLI">GMLI</option>
+    <option value="HLI">HLI</option>
+    <option value="ILI">ILI</option>
+    <option value="LICN">LICN</option>
+    <option value="NLIC">NLIC</option>
+    <option value="NLICL">NLICL</option>
+    <option value="PMLI">PMLI</option>
+    <option value="RNLI">RNLI</option>
+    <option value="SJLIC">SJLIC</option>
+    <option value="SNLI">SNLI</option>
+    <option value="SRLI">SRLI</option>
+  </optgroup>
+  <optgroup label="-- Hotels & Tourism --">
+    <option value="HOTELS">Hotels & Tourism Index</option>
+    <option value="BANDIPUR">BANDIPUR</option>
+    <option value="CGH">CGH</option>
+    <option value="CITY">CITY</option>
+    <option value="HFIN">HFIN</option>
+    <option value="KDL">KDL</option>
+    <option value="OHL">OHL</option>
+    <option value="SHL">SHL</option>
+    <option value="TRH">TRH</option>
+  </optgroup>
+  <optgroup label="-- Trading --">
+    <option value="TRADING">Trading Index</option>
+    <option value="BBC">BBC</option>
+    <option value="STC">STC</option>
+  </optgroup>
+  <optgroup label="-- Manufacturing --">
+    <option value="MANUFACTURING">Manufacturing Index</option>
+    <option value="BNT">BNT</option>
+    <option value="GCIL">GCIL</option>
+    <option value="HATHY">HATHY</option>
+    <option value="HDL">HDL</option>
+    <option value="OMPL">OMPL</option>
+    <option value="PCIL">PCIL</option>
+    <option value="RSML">RSML</option>
+    <option value="SAIL">SAIL</option>
+    <option value="SARBTM">SARBTM</option>
+    <option value="SHIVM">SHIVM</option>
+    <option value="SONA">SONA</option>
+    <option value="SOPL">SOPL</option>
+    <option value="SYPNL">SYPNL</option>
+    <option value="UNL">UNL</option>
+  </optgroup>
+  <optgroup label="-- Investment --">
+    <option value="INVESTMENT">Investment Index</option>
+    <option value="CHDC">CHDC</option>
+    <option value="CIT">CIT</option>
+    <option value="ENL">ENL</option>
+    <option value="HIDCL">HIDCL</option>
+    <option value="NIFRA">NIFRA</option>
+    <option value="NRN">NRN</option>
+  </optgroup>
+  <optgroup label="-- Others --">
+    <option value="OTHERS">Others Index</option>
+    <option value="HRL">HRL</option>
+    <option value="JHAPA">JHAPA</option>
+    <option value="MKCL">MKCL</option>
+    <option value="NRIC">NRIC</option>
+    <option value="NRM">NRM</option>
+    <option value="NTC">NTC</option>
+    <option value="NWCL">NWCL</option>
+    <option value="PURE">PURE</option>
+    <option value="TTL">TTL</option>
+  </optgroup>
+  <optgroup label="-- Mutual Fund --">
+    <option value="MUTUALFUND">Mutual Fund Index</option>
+    <option value="C30MF">C30MF</option>
+    <option value="GIBF1">GIBF1</option>
+    <option value="LUK">LUK</option>
+    <option value="NIBLGF">NIBLGF</option>
+    <option value="NICBF">NICBF</option>
+    <option value="NMB50">NMB50</option>
+    <option value="SAGF">SAGF</option>
+    <option value="SBCF">SBCF</option>
+    <option value="SFMF">SFMF</option>
+    <option value="SLCF">SLCF</option>
+  </optgroup>
+</select>
+    <div>
+      <div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:1px;" id="hdr-price">NEPSE 2,607.37</div>
+      <div style="font-family:var(--mono);font-size:10px;" id="hdr-chg" class="bear">&#9660; -1.66 (-0.06%) &middot; Vol 3.498B</div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:2px;" id="hdr-saved">&#128190; Not saved yet</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('dashboard')">&#9670; Dashboard</div>
+  <div class="tab" onclick="switchTab('signal')">&#9889; Signal</div>
+  <div class="tab" onclick="switchTab('journal')">&#128214; Journal</div>
+  <div class="tab" onclick="switchTab('planner')">&#128198; Planner</div>
+  <div class="tab" onclick="switchTab('eod')">&#11015; EOD Import</div>
+  <div class="tab" onclick="switchTab('weekly')">&#9745; Weekly</div>
+  <div class="tab" onclick="switchTab('editor')">&#9998; Edit</div>
+  <div class="tab" onclick="switchTab('levels')">&#8801; Levels</div>
+</div>
+<!-- TAB 1: DASHBOARD -->
+<div class="tab-panel active" id="tab-dashboard">
+  <div class="export-bar">
+    <span class="export-label">Export &#9658;</span>
+    <button class="btn-m" onclick="exportCSV()">&#11015; CSV</button>
+    <button class="btn-q" onclick="exportXLSX()">&#11015; Excel</button>
+    <button class="btn-l" onclick="exportHTML()">&#11015; Snapshot</button>
+    <button class="btn-muted" onclick="window.print()">Print</button>
+  </div>
+  <div class="ohlv-row">
+    <div class="ohlv-card o"><div class="ohlv-label">Open</div><div class="ohlv-val" id="d-open">2,608.10</div></div>
+    <div class="ohlv-card h"><div class="ohlv-label">High</div><div class="ohlv-val bull" id="d-high">2,611.99</div></div>
+    <div class="ohlv-card lo"><div class="ohlv-label">Low</div><div class="ohlv-val bear" id="d-low">2,601.50</div></div>
+    <div class="ohlv-card c"><div class="ohlv-label">Close / LTP</div><div class="ohlv-val qc" id="d-close">2,607.37</div></div>
+    <div class="ohlv-card v"><div class="ohlv-label">Volume</div><div class="ohlv-val bear" id="d-vol">-3.498B</div></div>
+    <div class="ohlv-card d"><div class="ohlv-label">Date</div><div class="ohlv-val" style="font-size:11px;" id="d-date">11-Dec-2025</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 295px;gap:13px;margin-bottom:13px;">
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">QML Level Map</span><span class="panel-badge" id="badge-date">NEPSE &middot; DAILY</span></div>
+      <table class="qml-table">
+        <thead><tr><th>Tier</th><th>Type</th><th>Level</th><th>Dist%</th><th>Confluence</th><th>Note</th></tr></thead>
+        <tbody id="qml-tbody"></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Price Map</span><span class="panel-badge">Q M L</span></div>
+      <div style="padding:11px;">
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:8px;letter-spacing:2px;text-transform:uppercase;" id="pmap-range">Loading...</div>
+        <div class="pbar" id="pricebar"></div>
+      </div>
+    </div>
+  </div>
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:13px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">
+  <div style="text-align:center;">
+    <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;">Advanced</div>
+    <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--bull);" id="mb-adv">120</div>
+  </div>
+  <div style="text-align:center;">
+    <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;">Declined</div>
+    <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--bear);" id="mb-dec">135</div>
+  </div>
+  <div style="text-align:center;">
+    <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;">Unchanged</div>
+    <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--neutral);" id="mb-unch">19</div>
+  </div>
+  <div style="text-align:center;">
+    <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;">Breadth</div>
+    <div style="font-family:var(--mono);font-size:13px;font-weight:700;" id="mb-breadth" style="color:var(--neutral);">NEUTRAL</div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);" id="mb-ratio">120/135</div>
+  </div>
+</div>
+<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:13px;">
+  <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Sector Breadth — Jul 10</div>
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;" id="sector-breadth">
+    <div style="text-align:center;padding:5px 3px;border-radius:4px;background:rgba(231,76,60,0.15);"><div style="font-family:var(--mono);font-size:8px;color:var(--bear);font-weight:700;">BANK</div><div style="font-family:var(--mono);font-size:9px;color:var(--bear);">-0.17%</div></div>
+    <div style="text-align:center;padding:5px 3px;border-radius:4px;background:rgba(231,76,60,0.15);"><div style="font-family:var(--mono);font-size:8px;color:var(--bear);font-weight:700;">DEV</div><div style="font-family:var(--mono);font-size:9px;color:var(--bear);">-0.39%</div></div>
+    <div style="text-align:center;padding:5px 3px;border-radius:4px;background:rgba(231,76,60,0.15);"><div style="font-family:var(--mono);font-size:8px;color:var(--bear);font-weight:700;">FIN</div><div style="font-family:var(--mono);font-size:9px;color:var(--bear);">-0.28%</div></div>
+    <div style="text-align:center;padding:5px 3px;border-radius:4px;background:rgba(231,76,60,0.15);"><div style="font-family:var(--mono);font-size:8px;color:var(--bear);font-weight:700;">HYDRO</div><div style="font-family:var(--mono);font-size:9px;color:var(--bear);">-0.27%</div></div>
+    <div style="text-align:center;padding:5px 3px;border-radius:4px;background:rgba(26,184,122,0.15);"><div style="font-family:var(--mono);font-size:8px;color:var(--bull);font-weight:700;">MFG</div><div style="font-family:var(--mono);font-size:9px;color:var(--bull);">+0.25%</div></div>
+    <div style="text-align:center;padding:5px 3px;border-radius:4px;background:rgba(26,184,122,0.15);"><div style="font-family:var(--mono);font-size:8px;color:var(--bull);font-weight:700;">TRADE</div><div style="font-family:var(--mono);font-size:9px;color:var(--bull);">+1.38%</div></div>
+    <div style="text-align:center;padding:5px 3px;border-radius:4px;background:rgba(240,192,64,0.1);"><div style="font-family:var(--mono);font-size:8px;color:var(--neutral);font-weight:700;">NEPSE</div><div style="font-family:var(--mono);font-size:9px;color:var(--neutral);">-0.04%</div></div>
+  </div>
+</div>
+<!-- SECTOR SCRIP PANEL -->
+<div id="sector-scrip-panel" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:13px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
+    <div style="font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--q);" id="sector-panel-title">Sector Scrips</div>
+    <button onclick="document.getElementById('sector-scrip-panel').style.display='none'" style="background:transparent;color:var(--muted);border:none;font-size:12px;cursor:pointer;">&#10005; Close</button>
+  </div>
+  <div id="sector-scrip-list" style="display:flex;flex-wrap:wrap;gap:5px;max-height:120px;overflow-y:auto;"></div>
+</div>
+<div class="sec-label" style="margin-bottom:9px;">&#9672; Indicators</div>
+  <div class="ind-grid" style="margin-bottom:13px;">
+    <div class="ind-card"><div class="ind-name">RSI 14</div><div class="ind-val" id="i-rsi">51.25</div><div class="ind-sig sig-neut" id="i-rsi-sig">Neutral</div><div class="ind-bar-bg"><div class="ind-bar-fill" id="i-rsi-bar" style="width:51%;background:var(--neutral);"></div></div></div>
+    <div class="ind-card"><div class="ind-name">WMA 9</div><div class="ind-val" id="i-wma">49.12</div><div class="ind-sig sig-bear" id="i-wma-sig">Weak</div><div class="ind-bar-bg"><div class="ind-bar-fill" id="i-wma-bar" style="width:49%;background:var(--bear);"></div></div></div>
+    <div class="ind-card"><div class="ind-name">DPO 21</div><div class="ind-val" id="i-dpo" style="color:var(--m);">30.59</div><div class="ind-sig sig-bull" id="i-dpo-sig">Cycle Up</div><div class="ind-bar-bg"><div class="ind-bar-fill" id="i-dpo-bar" style="width:62%;background:var(--m);"></div></div></div>
+    <div class="ind-card"><div class="ind-name">SEB 21</div><div class="ind-val" id="i-seb" style="color:var(--muted);">2,649</div><div class="ind-sig sig-bear" id="i-seb-sig">Below Band</div><div class="ind-bar-bg"><div class="ind-bar-fill" id="i-seb-bar" style="width:30%;background:var(--bear);"></div></div></div>
+    <div class="ind-card"><div class="ind-name">Net Vol</div><div class="ind-val bear" id="i-nvol">-3.498B</div><div class="ind-sig sig-bear" id="i-nvol-sig">Distribution</div><div class="ind-bar-bg"><div class="ind-bar-fill" id="i-nvol-bar" style="width:20%;background:var(--bear);"></div></div></div>
+  </div>
+  <div class="sec-label" style="margin-bottom:9px;">&#9672; QML Setup Analysis</div>
+  <div class="setup-grid" style="margin-bottom:13px;">
+    <div class="setup-card">
+      <div class="setup-title">Structure Signals</div>
+      <div class="setup-row"><span class="setup-key">Q Structure</span><span class="setup-val bear" id="sig-q">Downtrend</span></div>
+      <div class="setup-row"><span class="setup-key">M Structure</span><span class="setup-val bear" id="sig-m">Below M levels</span></div>
+      <div class="setup-row"><span class="setup-key">L Structure</span><span class="setup-val neut" id="sig-l">Inside L range</span></div>
+      <div class="setup-row"><span class="setup-key">Price vs SEB</span><span class="setup-val bear" id="sig-seb">Below SEB</span></div>
+      <div class="setup-row"><span class="setup-key">Price vs DC-89</span><span class="setup-val bear" id="sig-dc">Below midline</span></div>
+      <div class="setup-row"><span class="setup-key">Ichimoku</span><span class="setup-val bear" id="sig-ich">Below cloud</span></div>
+      <div class="setup-row"><span class="setup-key">Net Volume</span><span class="setup-val bear" id="sig-vol">Distribution</span></div>
+    </div>
+    <div class="setup-card">
+      <div class="setup-title">QML Bias Meter</div>
+      <div class="bias-rows" id="bias-rows"></div>
+      <div style="margin-top:11px;padding-top:9px;border-top:1px solid var(--border);">
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:3px;letter-spacing:1.5px;">OVERALL QML BIAS</div>
+        <div style="font-family:var(--mono);font-size:12px;font-weight:700;" id="overall-bias">BEARISH</div>
+      </div>
+    </div>
+  </div>
+  <div class="trade-plan">
+    <div class="trade-plan-title">&#9672; QML Trade Plan &mdash; <span id="tp-ticker">NEPSE</span> (<span id="tp-date">2025</span>)</div>
+    <div class="tp-row">
+      <div class="tp-block"><div class="tp-label">Entry Zone</div><div class="tp-price entry" id="tp-entry">2,600&ndash;2,607</div><div class="tp-note">L-Low bounce</div></div>
+      <div class="tp-div"></div>
+      <div class="tp-block"><div class="tp-label">Stop Loss</div><div class="tp-price sl" id="tp-sl">2,487</div><div class="tp-note">M-Q confluence</div></div>
+      <div class="tp-div"></div>
+      <div class="tp-block"><div class="tp-label">Target 1 (M)</div><div class="tp-price tp1" id="tp-t1">2,653</div><div class="tp-note">M cluster</div></div>
+      <div class="tp-div"></div>
+      <div class="tp-block"><div class="tp-label">Target 2 (Q)</div><div class="tp-price tp2" id="tp-t2">2,689</div><div class="tp-note">DC-89 zone</div></div>
+      <div class="tp-div"></div>
+      <div class="tp-block"><div class="tp-label">Scenario B</div><div class="tp-price sl" id="tp-b">Below 2,600</div><div class="tp-note">Next: 2,487</div></div>
+    </div>
+    <div class="rr-badge" id="rr-badge">R:R &asymp; 1:2.0</div>
+  </div>
+</div>
+
+<!-- TAB 2: SIGNAL ENGINE -->
+<div class="tab-panel" id="tab-signal">
+  <div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px;padding-bottom:5px;border-bottom:1px solid var(--border);margin-bottom:13px;">&#9889; SIGNAL ENGINE &mdash; 4 LAYERS: PRICE &middot; DPO &middot; VOLUME &middot; QML</div>
+  <div class="sig-result">
+    <div class="sig-main wait" id="se-main">WAIT</div>
+    <div class="sig-sub" id="se-sub">Enter values and calculate</div>
+    <div class="sig-score" id="se-score" style="color:var(--neutral);">0 / 4 layers</div>
+    <div class="conf-meter"><div class="conf-fill" id="se-conf-fill" style="width:0%;background:var(--neutral);"></div></div>
+  </div>
+  <div class="layer-checks">
+    <div class="layer-check"><div class="check-dot warn" id="dot-1"></div><div><div class="check-label">Layer 1 &mdash; Price / Pivot</div><div class="check-val warn" id="chk-1">Not calculated</div></div></div>
+    <div class="layer-check"><div class="check-dot warn" id="dot-2"></div><div><div class="check-label">Layer 2 &mdash; DPO Cycle</div><div class="check-val warn" id="chk-2">Not calculated</div></div></div>
+    <div class="layer-check"><div class="check-dot warn" id="dot-3"></div><div><div class="check-label">Layer 3 &mdash; Volume Rule</div><div class="check-val warn" id="chk-3">Not calculated</div></div></div>
+    <div class="layer-check"><div class="check-dot warn" id="dot-4"></div><div><div class="check-label">Layer 4 &mdash; QML Level</div><div class="check-val warn" id="chk-4">Not calculated</div></div></div>
+  </div>
+  <div class="sig-engine">
+    <div class="sig-layer">
+      <div class="sig-layer-title" style="color:var(--q);">&#9670; Layer 1 &mdash; Price / Pivot</div>
+      <div class="sig-field"><label>Close Price</label><input id="se-close" type="number" step="0.01" placeholder="Auto from scrip" oninput="autoCalcPivot()"></div>
+      <div class="sig-field"><label>Pivot (H+L+C)/3</label><input id="se-pivot" type="number" step="0.01" placeholder="Auto-calculated"></div>
+      <div class="sig-field"><label>RSI 14</label><input id="se-rsi" type="number" step="0.01" placeholder="Auto from scrip"></div>
+      <div id="se-pivot-hint" style="font-family:var(--mono);font-size:9px;font-weight:700;margin-top:5px;padding:5px 8px;border-radius:4px;background:var(--bg3);">Load scrip to auto-fill</div>
+      <div id="se-rsi-hint" style="font-family:var(--mono);font-size:9px;font-weight:700;margin-top:4px;padding:5px 8px;border-radius:4px;background:var(--bg3);">RSI signal</div>
+    </div>
+    <div class="sig-layer">
+      <div class="sig-layer-title" style="color:var(--m);">&#9670; Layer 2 &mdash; DPO Cycle</div>
+      <div class="sig-field"><label>DPO 21 Value</label><input id="se-dpo" type="number" step="0.01" placeholder="Auto from scrip" oninput="autoDPODir()"></div>
+      <div style="margin-bottom:8px;">
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:5px;">DPO Direction:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+          <div id="dpo-pos-btn" onclick="setDPODir('positive')" style="padding:8px;text-align:center;border-radius:5px;cursor:pointer;font-family:var(--mono);font-size:10px;font-weight:700;background:var(--bg3);border:1px solid var(--border2);color:var(--muted);">DPO &gt; 0 &#9650;<br><span style="font-size:8px;">Cycle Strong</span></div>
+          <div id="dpo-neg-btn" onclick="setDPODir('negative')" style="padding:8px;text-align:center;border-radius:5px;cursor:pointer;font-family:var(--mono);font-size:10px;font-weight:700;background:var(--bg3);border:1px solid var(--border2);color:var(--muted);">DPO &lt; 0 &#9660;<br><span style="font-size:8px;">Cycle Weak</span></div>
+        </div>
+      </div>
+      <div id="se-dpo-hint" style="font-family:var(--mono);font-size:9px;font-weight:700;padding:5px 8px;border-radius:4px;background:var(--bg3);">Auto from scrip</div>
+      <input type="hidden" id="se-dpo-dir" value="flat">
+    </div>
+    <div class="sig-layer">
+      <div class="sig-layer-title" style="color:var(--l);">&#9670; Layer 3 &mdash; Volume Rule</div>
+      <div class="sig-field"><label>Volume at</label>
+        <select id="se-vol-pos"><option value="support">Support / Rest</option><option value="top">Top / Resistance</option><option value="mid">Mid Range</option></select>
+      </div>
+      <div class="sig-field"><label>5-candle streak</label>
+        <select id="se-vol-streak"><option value="0">0 candles</option><option value="1">1-2 candles</option><option value="3">3-4 candles</option><option value="5">5+ candles &#9889;</option></select>
+      </div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:5px;line-height:1.7;">7B+ at top = distribution (bear)<br>7M+ at support = accumulation (bull)</div>
+    </div>
+    <div class="sig-layer">
+      <div class="sig-layer-title" style="color:var(--q);">&#9670; Layer 4 &mdash; QML Level</div>
+      <div class="sig-field"><label>Price vs levels</label>
+        <select id="se-qml-pos">
+          <option value="above-all">Above all QML levels</option>
+          <option value="above-m">Above M, below Q</option>
+          <option value="above-l">Above L, below M</option>
+          <option value="at-support">At Q/M support zone</option>
+          <option value="below-all">Below all levels</option>
+        </select>
+      </div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:5px;line-height:1.7;">At support + vol dry = accumulation<br>Above M = bullish structure confirmed</div>
+    </div>
+  </div>
+  <button class="btn-q" style="width:100%;padding:12px;font-size:12px;margin-top:8px;" onclick="calcSignal()">&#9889; CALCULATE SIGNAL</button>
+</div>
+<!-- TAB 3: JOURNAL -->
+<div class="tab-panel" id="tab-journal">
+  <div class="jnl-stats">
+    <div class="jnl-stat"><div class="jnl-stat-label">Total Trades</div><div class="jnl-stat-val" id="js-total">0</div></div>
+    <div class="jnl-stat"><div class="jnl-stat-label">Win Rate</div><div class="jnl-stat-val bull" id="js-winrate">0%</div></div>
+    <div class="jnl-stat"><div class="jnl-stat-label">Total P&amp;L</div><div class="jnl-stat-val" id="js-pnl">0.00</div></div>
+    <div class="jnl-stat"><div class="jnl-stat-label">System %</div><div class="jnl-stat-val neut" id="js-systrades">0%</div></div>
+    <div class="jnl-stat"><div class="jnl-stat-label">Avg R:R</div><div class="jnl-stat-val" id="js-rr">0.00</div></div>
+  </div>
+  <div class="pos-calc">
+    <div class="pos-calc-title">&#9670; Position Size Calculator</div>
+    <div class="pos-calc-grid">
+      <div class="jnl-form-field"><label>Capital (Rs)</label><input id="pc-capital" type="number" placeholder="e.g. 100000" oninput="calcPosition()"></div>
+      <div class="jnl-form-field"><label>Risk %</label><input id="pc-risk" type="number" step="0.1" placeholder="e.g. 2" oninput="calcPosition()"></div>
+      <div class="jnl-form-field"><label>Entry Price</label><input id="pc-entry" type="number" step="0.01" oninput="calcPosition()"></div>
+      <div class="jnl-form-field"><label>Stop Loss</label><input id="pc-sl" type="number" step="0.01" oninput="calcPosition()"></div>
+      <div class="jnl-form-field"><label>Target</label><input id="pc-target" type="number" step="0.01" oninput="calcPosition()"></div>
+      <div class="jnl-form-field"><label>Scrip</label>
+        <select id="pc-sector" onchange="autoFillPosition(this.value)"><optgroup label="Indices"><option>NEPSE</option><option>BANKING</option><option>DEVBANK</option><option>FINANCE</option><option>MICROFINANCE</option><option>HYDROPOWER</option><option>NONLIFEINSU</option><option>LIFEINSU</option><option>HOTELS</option><option>TRADING</option><option>MANUFACTURING</option><option>INVESTMENT</option><option>OTHERS</option><option>MUTUALFUND</option></optgroup><optgroup label="Banking"><option>ADBL</option><option>BOK</option><option>CZBIL</option><option>EBL</option><option>GBIME</option><option>HBL</option><option>KBL</option><option>LSL</option><option>MBL</option><option>NABIL</option><option>NBL</option><option>NICA</option><option>NIMB</option><option>NMB</option><option>PCBL</option><option>PRVU</option><option>SANIMA</option><option>SBI</option><option>SBL</option><option>SCB</option></optgroup><optgroup label="Development Bank"><option>CORBL</option><option>EDBL</option><option>GBBL</option><option>GRDBL</option><option>JBBL</option><option>KSBBL</option><option>LBBL</option><option>MDB</option><option>MLBL</option><option>MNBBL</option><option>NABBC</option><option>NESDO</option><option>SABBL</option><option>SADBL</option><option>SAPDBL</option><option>SHINE</option><option>SINDU</option><option>SKBBL</option></optgroup><optgroup label="Finance"><option>BFC</option><option>CFCL</option><option>GFCL</option><option>GMFIL</option><option>GUFL</option><option>ICFC</option><option>JFL</option><option>MFIL</option><option>MPFL</option><option>NFS</option><option>PROFL</option><option>RLFL</option><option>SIFC</option></optgroup><optgroup label="Microfinance"><option>ACLBSL</option><option>ALBSL</option><option>ANLB</option><option>AVYAN</option><option>CBBL</option><option>CYCL</option><option>DDBL</option><option>DLBS</option><option>FOWAD</option><option>GILB</option><option>GLBSL</option><option>GMFBS</option><option>HLBSL</option><option>ILBS</option><option>JBLB</option><option>JSLBB</option><option>KMCDB</option><option>LLBS</option><option>MATRI</option><option>MERO</option><option>MLBBL</option><option>MLBS</option><option>MSLB</option><option>NADEP</option><option>NICLBSL</option><option>NMBMF</option><option>NMFBS</option><option>NMLBBL</option><option>NUBL</option><option>RSDC</option><option>SKBBL</option><option>SLBBL</option><option>SLBSL</option><option>SMATA</option><option>SMB</option><option>SMPDA</option><option>SWASTIK</option><option>SWBBL</option><option>SWMF</option><option>ULBSL</option><option>USLB</option><option>VLBS</option><option>WNLB</option></optgroup><optgroup label="HydroPower"><option>AHL</option><option>AHPC</option><option>AKJCL</option><option>AKPL</option><option>API</option><option>BARUN</option><option>BEDC</option><option>BGWT</option><option>BHCL</option><option>BHDC</option><option>BHPL</option><option>BJHL</option><option>BNHC</option><option>BPCL</option><option>BUNGAL</option><option>CHCL</option><option>CHL</option><option>CKHL</option><option>DHEL</option><option>DHPL</option><option>DOLTI</option><option>DORDI</option><option>EHPL</option><option>GHL</option><option>GLH</option><option>GVL</option><option>HDHPC</option><option>HHL</option><option>HIMSTAR</option><option>HPPL</option><option>HURJA</option><option>IHL</option><option>JOSHI</option><option>KAHL</option><option>KBSH</option><option>KKHC</option><option>KPCL</option><option>LEC</option><option>MABEL</option><option>MAKAR</option><option>MANDU</option><option>MCHL</option><option>MEHL</option><option>MEL</option><option>MEN</option><option>MHCL</option><option>MHL</option><option>MHNL</option><option>MKHC</option><option>MKHL</option><option>MKJC</option><option>MMKJL</option><option>MSHL</option><option>NGPL</option><option>NHDL</option><option>NHPC</option><option>NYADI</option><option>PHCL</option><option>PMHPL</option><option>PPCL</option><option>PPL</option><option>RADHI</option><option>RAWA</option><option>RFPL</option><option>RHGCL</option><option>RHPL</option><option>RIDI</option><option>RLEL</option><option>RURU</option><option>SAGAR</option><option>SAHAS</option><option>SANVI</option><option>SGHC</option><option>SGHL</option><option>SHEL</option><option>SHPC</option><option>SIKLES</option><option>SIPD</option><option>SJCL</option><option>SKHEL</option><option>SKHL</option><option>SMHL</option><option>SMJC</option><option>SNORL</option><option>SOHL</option><option>SPC</option><option>SPDL</option><option>SPHL</option><option>SPL</option><option>SSHL</option><option>TAMOR</option><option>TPC</option><option>TPKHL</option><option>TSHL</option><option>TVCL</option><option>UHEWA</option><option>ULHC</option><option>UMHL</option><option>UMRH</option><option>UNHPL</option><option>UPCL</option><option>UPPER</option><option>USHEC</option><option>USHL</option><option>VLUCL</option><option>YMHL</option></optgroup><optgroup label="Non-Life Insurance"><option>HEI</option><option>IGI</option><option>NICL</option><option>NIL</option><option>NLG</option><option>NMIC</option><option>PRIN</option><option>RBCL</option><option>SALICO</option><option>SGIC</option><option>SICL</option><option>SPIL</option><option>UAIL</option></optgroup><optgroup label="Life Insurance"><option>ALICL</option><option>CLI</option><option>CREST</option><option>GMLI</option><option>HLI</option><option>ILI</option><option>LICN</option><option>NLIC</option><option>NLICL</option><option>PMLI</option><option>RNLI</option><option>SJLIC</option><option>SNLI</option><option>SRLI</option></optgroup><optgroup label="Hotels & Tourism"><option>BANDIPUR</option><option>CGH</option><option>CITY</option><option>HFIN</option><option>KDL</option><option>OHL</option><option>SHL</option><option>TRH</option></optgroup><optgroup label="Trading"><option>BBC</option><option>STC</option></optgroup><optgroup label="Manufacturing"><option>BNT</option><option>GCIL</option><option>HATHY</option><option>HDL</option><option>OMPL</option><option>PCIL</option><option>RSML</option><option>SAIL</option><option>SARBTM</option><option>SHIVM</option><option>SONA</option><option>SOPL</option><option>SYPNL</option><option>UNL</option></optgroup><optgroup label="Investment"><option>CHDC</option><option>CIT</option><option>ENL</option><option>HIDCL</option><option>NIFRA</option><option>NRN</option></optgroup><optgroup label="Others"><option>HRL</option><option>JHAPA</option><option>MKCL</option><option>NRIC</option><option>NRM</option><option>NTC</option><option>NWCL</option><option>PURE</option><option>TTL</option></optgroup><optgroup label="Mutual Fund"><option>C30MF</option><option>GIBF1</option><option>LUK</option><option>NIBLGF</option><option>NICBF</option><option>NMB50</option><option>SAGF</option><option>SBCF</option><option>SFMF</option><option>SLCF</option></optgroup></select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px;">
+      <div class="pos-result"><div class="pos-result-label">Risk Amount (Rs)</div><div class="pos-result-val" id="pc-riskamt">&#8212;</div></div>
+      <div class="pos-result"><div class="pos-result-label">Position Size</div><div class="pos-result-val" id="pc-units">&#8212;</div></div>
+      <div class="pos-result"><div class="pos-result-label">R:R Ratio</div><div class="pos-result-val" id="pc-rratio">&#8212;</div></div>
+      <div class="pos-result"><div class="pos-result-label">Capital Used</div><div class="pos-result-val" id="pc-capused">&#8212;</div></div>
+    </div>
+  </div>
+  <div class="jnl-form">
+    <div class="jnl-form-title">&#9670; New Trade Entry &mdash; <span id="jf-scrip-display" style="color:var(--l);">Select scrip first</span></div>
+    <div class="jnl-form-grid">
+      <div class="jnl-form-field"><label>Date</label><input id="jf-date" type="date"></div>
+      <div class="jnl-form-field"><label>Scrip</label>
+        <select id="jf-sector" onchange="autoFillJournal(this.value)"><optgroup label="Indices"><option>NEPSE</option><option>BANKING</option><option>DEVBANK</option><option>FINANCE</option><option>MICROFINANCE</option><option>HYDROPOWER</option><option>NONLIFEINSU</option><option>LIFEINSU</option><option>HOTELS</option><option>TRADING</option><option>MANUFACTURING</option><option>INVESTMENT</option><option>OTHERS</option><option>MUTUALFUND</option></optgroup><optgroup label="Banking"><option>ADBL</option><option>BOK</option><option>CZBIL</option><option>EBL</option><option>GBIME</option><option>HBL</option><option>KBL</option><option>LSL</option><option>MBL</option><option>NABIL</option><option>NBL</option><option>NICA</option><option>NIMB</option><option>NMB</option><option>PCBL</option><option>PRVU</option><option>SANIMA</option><option>SBI</option><option>SBL</option><option>SCB</option></optgroup><optgroup label="Development Bank"><option>CORBL</option><option>EDBL</option><option>GBBL</option><option>GRDBL</option><option>JBBL</option><option>KSBBL</option><option>LBBL</option><option>MDB</option><option>MLBL</option><option>MNBBL</option><option>NABBC</option><option>NESDO</option><option>SABBL</option><option>SADBL</option><option>SAPDBL</option><option>SHINE</option><option>SINDU</option><option>SKBBL</option></optgroup><optgroup label="Finance"><option>BFC</option><option>CFCL</option><option>GFCL</option><option>GMFIL</option><option>GUFL</option><option>ICFC</option><option>JFL</option><option>MFIL</option><option>MPFL</option><option>NFS</option><option>PROFL</option><option>RLFL</option><option>SIFC</option></optgroup><optgroup label="Microfinance"><option>ACLBSL</option><option>ALBSL</option><option>ANLB</option><option>AVYAN</option><option>CBBL</option><option>CYCL</option><option>DDBL</option><option>DLBS</option><option>FOWAD</option><option>GILB</option><option>GLBSL</option><option>GMFBS</option><option>HLBSL</option><option>ILBS</option><option>JBLB</option><option>JSLBB</option><option>KMCDB</option><option>LLBS</option><option>MATRI</option><option>MERO</option><option>MLBBL</option><option>MLBS</option><option>MSLB</option><option>NADEP</option><option>NICLBSL</option><option>NMBMF</option><option>NMFBS</option><option>NMLBBL</option><option>NUBL</option><option>RSDC</option><option>SKBBL</option><option>SLBBL</option><option>SLBSL</option><option>SMATA</option><option>SMB</option><option>SMPDA</option><option>SWASTIK</option><option>SWBBL</option><option>SWMF</option><option>ULBSL</option><option>USLB</option><option>VLBS</option><option>WNLB</option></optgroup><optgroup label="HydroPower"><option>AHL</option><option>AHPC</option><option>AKJCL</option><option>AKPL</option><option>API</option><option>BARUN</option><option>BEDC</option><option>BGWT</option><option>BHCL</option><option>BHDC</option><option>BHPL</option><option>BJHL</option><option>BNHC</option><option>BPCL</option><option>BUNGAL</option><option>CHCL</option><option>CHL</option><option>CKHL</option><option>DHEL</option><option>DHPL</option><option>DOLTI</option><option>DORDI</option><option>EHPL</option><option>GHL</option><option>GLH</option><option>GVL</option><option>HDHPC</option><option>HHL</option><option>HIMSTAR</option><option>HPPL</option><option>HURJA</option><option>IHL</option><option>JOSHI</option><option>KAHL</option><option>KBSH</option><option>KKHC</option><option>KPCL</option><option>LEC</option><option>MABEL</option><option>MAKAR</option><option>MANDU</option><option>MCHL</option><option>MEHL</option><option>MEL</option><option>MEN</option><option>MHCL</option><option>MHL</option><option>MHNL</option><option>MKHC</option><option>MKHL</option><option>MKJC</option><option>MMKJL</option><option>MSHL</option><option>NGPL</option><option>NHDL</option><option>NHPC</option><option>NYADI</option><option>PHCL</option><option>PMHPL</option><option>PPCL</option><option>PPL</option><option>RADHI</option><option>RAWA</option><option>RFPL</option><option>RHGCL</option><option>RHPL</option><option>RIDI</option><option>RLEL</option><option>RURU</option><option>SAGAR</option><option>SAHAS</option><option>SANVI</option><option>SGHC</option><option>SGHL</option><option>SHEL</option><option>SHPC</option><option>SIKLES</option><option>SIPD</option><option>SJCL</option><option>SKHEL</option><option>SKHL</option><option>SMHL</option><option>SMJC</option><option>SNORL</option><option>SOHL</option><option>SPC</option><option>SPDL</option><option>SPHL</option><option>SPL</option><option>SSHL</option><option>TAMOR</option><option>TPC</option><option>TPKHL</option><option>TSHL</option><option>TVCL</option><option>UHEWA</option><option>ULHC</option><option>UMHL</option><option>UMRH</option><option>UNHPL</option><option>UPCL</option><option>UPPER</option><option>USHEC</option><option>USHL</option><option>VLUCL</option><option>YMHL</option></optgroup><optgroup label="Non-Life Insurance"><option>HEI</option><option>IGI</option><option>NICL</option><option>NIL</option><option>NLG</option><option>NMIC</option><option>PRIN</option><option>RBCL</option><option>SALICO</option><option>SGIC</option><option>SICL</option><option>SPIL</option><option>UAIL</option></optgroup><optgroup label="Life Insurance"><option>ALICL</option><option>CLI</option><option>CREST</option><option>GMLI</option><option>HLI</option><option>ILI</option><option>LICN</option><option>NLIC</option><option>NLICL</option><option>PMLI</option><option>RNLI</option><option>SJLIC</option><option>SNLI</option><option>SRLI</option></optgroup><optgroup label="Hotels & Tourism"><option>BANDIPUR</option><option>CGH</option><option>CITY</option><option>HFIN</option><option>KDL</option><option>OHL</option><option>SHL</option><option>TRH</option></optgroup><optgroup label="Trading"><option>BBC</option><option>STC</option></optgroup><optgroup label="Manufacturing"><option>BNT</option><option>GCIL</option><option>HATHY</option><option>HDL</option><option>OMPL</option><option>PCIL</option><option>RSML</option><option>SAIL</option><option>SARBTM</option><option>SHIVM</option><option>SONA</option><option>SOPL</option><option>SYPNL</option><option>UNL</option></optgroup><optgroup label="Investment"><option>CHDC</option><option>CIT</option><option>ENL</option><option>HIDCL</option><option>NIFRA</option><option>NRN</option></optgroup><optgroup label="Others"><option>HRL</option><option>JHAPA</option><option>MKCL</option><option>NRIC</option><option>NRM</option><option>NTC</option><option>NWCL</option><option>PURE</option><option>TTL</option></optgroup><optgroup label="Mutual Fund"><option>C30MF</option><option>GIBF1</option><option>LUK</option><option>NIBLGF</option><option>NICBF</option><option>NMB50</option><option>SAGF</option><option>SBCF</option><option>SFMF</option><option>SLCF</option></optgroup></select>
+      </div>
+      <div class="jnl-form-field"><label>Direction</label><select id="jf-dir"><option value="LONG">LONG &#9650;</option><option value="SHORT">SHORT &#9660;</option></select></div>
+      <div class="jnl-form-field"><label>Entry Price</label><input id="jf-entry" type="number" step="0.01"></div>
+      <div class="jnl-form-field"><label>Exit Price</label><input id="jf-exit" type="number" step="0.01"></div>
+      <div class="jnl-form-field"><label>Stop Loss</label><input id="jf-sl" type="number" step="0.01"></div>
+      <div class="jnl-form-field"><label>Units</label><input id="jf-vol" type="number"></div>
+      <div class="jnl-form-field"><label>Status</label><select id="jf-status"><option value="open">Open</option><option value="closed">Closed</option><option value="sl">Stopped Out</option></select></div>
+    </div>
+    <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px;">&#9672; System Rule Check</div>
+    <div class="jnl-rules">
+      <div class="jnl-rule" id="jr-1"><div class="jnl-rule-label">Rule 1: Close &gt; Pivot?</div><div class="jnl-rule-btns"><div class="jnl-rule-btn" id="jrb-1y" onclick="setRule(1,'yes')">YES</div><div class="jnl-rule-btn" id="jrb-1n" onclick="setRule(1,'no')">NO</div></div></div>
+      <div class="jnl-rule" id="jr-2"><div class="jnl-rule-label">Rule 2: DPO &gt; 0 or rising?</div><div class="jnl-rule-btns"><div class="jnl-rule-btn" id="jrb-2y" onclick="setRule(2,'yes')">YES</div><div class="jnl-rule-btn" id="jrb-2n" onclick="setRule(2,'no')">NO</div></div></div>
+      <div class="jnl-rule" id="jr-3"><div class="jnl-rule-label">Rule 3: Volume 7M+ at support?</div><div class="jnl-rule-btns"><div class="jnl-rule-btn" id="jrb-3y" onclick="setRule(3,'yes')">YES</div><div class="jnl-rule-btn" id="jrb-3n" onclick="setRule(3,'no')">NO</div></div></div>
+      <div class="jnl-rule" id="jr-4"><div class="jnl-rule-label">Rule 4: QML level hit?</div><div class="jnl-rule-btns"><div class="jnl-rule-btn" id="jrb-4y" onclick="setRule(4,'yes')">YES</div><div class="jnl-rule-btn" id="jrb-4n" onclick="setRule(4,'no')">NO</div></div></div>
+    </div>
+    <div class="jnl-verdict partial" id="jnl-verdict">&#9672; Answer all 4 rules to get verdict</div>
+    <div style="margin-bottom:11px;"><textarea id="jf-notes" style="width:100%;min-height:55px;resize:vertical;font-family:var(--mono);font-size:11px;background:var(--bg3);border:1px solid var(--border2);color:#fff;border-radius:4px;padding:7px;outline:none;line-height:1.6;" placeholder="Why this trade? Volume dry? Bolt candle? Pivot hold? Gann cycle?"></textarea></div>
+    <button class="btn-q" style="width:100%;padding:12px;font-size:12px;" onclick="addTrade()">&#10010; Add Trade to Journal</button>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Trade Log</span>
+      <div style="display:flex;gap:7px;">
+        <button class="btn-m" onclick="exportJournalCSV()">&#11015; CSV</button>
+        <button class="btn-q" onclick="exportJournalXLSX()">&#11015; Excel</button>
+        <button class="btn-bear" onclick="clearJournal()" style="padding:5px 9px;font-size:9px;">Clear</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="jnl-table">
+        <thead><tr><th>#</th><th>Date</th><th>Scrip</th><th>Dir</th><th>Entry</th><th>Exit</th><th>SL</th><th>Units</th><th>P&amp;L</th><th>R:R</th><th>System</th><th>Status</th><th>Del</th></tr></thead>
+        <tbody id="jnl-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: PLANNER -->
+<div class="tab-panel" id="tab-planner">
+  <div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px;padding-bottom:5px;border-bottom:1px solid var(--border);margin-bottom:13px;">&#128198; FORWARD PLANNER &mdash; 52W RANGE &middot; VOLUME &middot; GANN CYCLES &middot; DAILY/WEEKLY/MONTHLY</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px;">
+    <div class="eod-section">
+      <div class="eod-title" style="color:var(--q);">&#9670; Scrip Input</div>
+      <div class="field-row"><span class="field-label">Scrip</span>
+        <select id="fp-scrip">
+          <optgroup label="Indices"><option>NEPSE</option><option>BANKING</option><option>HYDROPOWER</option><option>FINANCE</option><option>DEVBANK</option><option>MICROFINANCE</option><option>NONLIFEINSU</option><option>LIFEINSU</option></optgroup>
+          <optgroup label="Banking"><option>NABIL</option><option>EBL</option><option>SANIMA</option><option>HBL</option><option>BOK</option><option>NICA</option><option>ADBL</option><option>MEGA</option><option>SBL</option><option>NMB</option></optgroup>
+          <optgroup label="HydroPower"><option>RADHI</option><option>AKJCL</option><option>BEDC</option><option>NHPC</option><option>HDHPC</option><option>UPPER</option><option>SHPC</option><option>CHCL</option><option>RURU</option><option>UMHL</option><option>HURJA</option><option>NGPL</option><option>SSHL</option><option>MHNL</option><option>GHL</option></optgroup>
+          <optgroup label="Others"><option>NTC</option><option>SHIVM</option><option>VVC</option><option>PRIN</option><option>SMH</option><option>NLG</option><option>HIDCL</option><option>NIFRA</option></optgroup>
+        </select>
+      </div>
+      <div class="field-row"><span class="field-label">Current LTP</span><input id="fp-cur" type="number" step="0.01" placeholder="Today close" oninput="updateRangeBar()"></div>
+      <div class="field-row"><span class="field-label">52W High</span><input id="fp-52wh" type="number" step="0.01" oninput="updateRangeBar()"></div>
+      <div class="field-row"><span class="field-label">52W Low</span><input id="fp-52wl" type="number" step="0.01" oninput="updateRangeBar()"></div>
+      <div class="field-row"><span class="field-label">Vol at 52W High</span><input id="fp-vh" placeholder="e.g. 8.5B or 12M"></div>
+      <div class="field-row"><span class="field-label">Vol at 52W Low</span><input id="fp-vl" placeholder="e.g. 1.2B or 3M"></div>
+      <div class="field-row"><span class="field-label">Swing Low Date</span><input id="fp-swdate" type="date"></div>
+      <button class="btn-q" style="width:100%;padding:11px;font-size:12px;margin-top:8px;" onclick="calcPlan()">&#128198; Calculate Forward Plan</button>
+    </div>
+    <div class="eod-section">
+      <div class="eod-title" style="color:var(--m);">&#9670; 52W Range + Auto QML</div>
+      <div style="background:var(--bg3);border-radius:6px;padding:11px;margin-bottom:11px;">
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:7px;">
+          <span id="fp-low-label">52W Low: &mdash;</span><span id="fp-high-label">52W High: &mdash;</span>
+        </div>
+        <div style="position:relative;height:18px;background:var(--bg2);border-radius:9px;border:1px solid var(--border2);">
+          <div style="position:absolute;top:0;height:100%;width:100%;border-radius:9px;background:linear-gradient(90deg,var(--bear),var(--neutral),var(--bull));opacity:0.3;"></div>
+          <div id="fp-cur-marker" style="display:none;position:absolute;top:-3px;width:4px;height:24px;background:#fff;border-radius:2px;transform:translateX(-50%);"></div>
+        </div>
+        <div id="fp-range-pct" style="font-family:var(--mono);font-size:10px;text-align:center;margin-top:7px;color:var(--muted);">Enter prices above</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:11px;">
+        <div style="background:var(--bg3);border-radius:5px;padding:9px;text-align:center;">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--q);font-weight:700;margin-bottom:3px;">Q Level</div>
+          <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:#fff;" id="fp-qlvl">&mdash;</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted);" id="fp-qdist">52W High</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:5px;padding:9px;text-align:center;">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--m);font-weight:700;margin-bottom:3px;">M Level</div>
+          <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:#fff;" id="fp-mlvl">&mdash;</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted);" id="fp-mdist">50% Range</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:5px;padding:9px;text-align:center;">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--l);font-weight:700;margin-bottom:3px;">L Level</div>
+          <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:#fff;" id="fp-llvl">&mdash;</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted);" id="fp-ldist">38.2%</div>
+        </div>
+      </div>
+      <div class="eod-title" style="color:var(--q);">&#9670; Gann Time Cycles</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;" id="fp-gann-cycles">
+        <div class="gann-box"><div class="gann-days">45 days</div><div class="gann-date">&mdash;</div><div class="gann-dist" style="color:var(--muted);">&mdash;</div></div>
+        <div class="gann-box"><div class="gann-days">90 days</div><div class="gann-date">&mdash;</div><div class="gann-dist" style="color:var(--muted);">&mdash;</div></div>
+        <div class="gann-box"><div class="gann-days">180 days</div><div class="gann-date">&mdash;</div><div class="gann-dist" style="color:var(--muted);">&mdash;</div></div>
+        <div class="gann-box"><div class="gann-days">360 days</div><div class="gann-date">&mdash;</div><div class="gann-dist" style="color:var(--muted);">&mdash;</div></div>
+      </div>
+    </div>
+  </div>
+  <div id="fp-plan-cards" style="display:none;margin-bottom:13px;">
+    <div class="sec-label" style="margin-bottom:9px;">&#128198; Forward Plan Output</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;">
+      <div class="plan-card daily"><div class="plan-card-title">Daily &mdash; Tomorrow</div>
+        <div class="plan-row"><span class="plan-key">Bias</span><span class="plan-val" id="pp-d-bias">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">Watch</span><span class="plan-val l" id="pp-d-watch">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">Entry</span><span class="plan-val bull" id="pp-d-entry">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">SL</span><span class="plan-val bear" id="pp-d-sl">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">Target</span><span class="plan-val m" id="pp-d-tgt">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">R:R</span><span class="plan-val q" id="pp-d-rr">&mdash;</span></div>
+      </div>
+      <div class="plan-card weekly"><div class="plan-card-title">Weekly &mdash; Next Week</div>
+        <div class="plan-row"><span class="plan-key">Bias</span><span class="plan-val" id="pp-w-bias">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">Key Level</span><span class="plan-val m" id="pp-w-watch">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">Entry</span><span class="plan-val bull" id="pp-w-entry">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">SL</span><span class="plan-val bear" id="pp-w-sl">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">T1</span><span class="plan-val m" id="pp-w-t1">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">T2</span><span class="plan-val q" id="pp-w-t2">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">R:R</span><span class="plan-val q" id="pp-w-rr">&mdash;</span></div>
+      </div>
+      <div class="plan-card monthly"><div class="plan-card-title">Monthly &mdash; Next Month</div>
+        <div class="plan-row"><span class="plan-key">Bias</span><span class="plan-val" id="pp-m-bias">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">Key Level</span><span class="plan-val q" id="pp-m-watch">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">Entry</span><span class="plan-val bull" id="pp-m-entry">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">SL</span><span class="plan-val bear" id="pp-m-sl">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">T1</span><span class="plan-val m" id="pp-m-t1">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">T2</span><span class="plan-val q" id="pp-m-t2">&mdash;</span></div>
+        <div class="plan-row"><span class="plan-key">R:R</span><span class="plan-val q" id="pp-m-rr">&mdash;</span></div>
+      </div>
+    </div>
+    <button class="btn-m" style="width:100%;margin-top:9px;" onclick="savePlan()">&#10010; Save Plan</button>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Saved Plans</span>
+      <div style="display:flex;gap:7px;">
+        <button class="btn-m" onclick="exportPlansCSV()">&#11015; CSV</button>
+        <button class="btn-bear" onclick="clearPlans()" style="padding:5px 9px;font-size:9px;">Clear</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="plans-table">
+        <thead><tr><th>#</th><th>Scrip</th><th>TF</th><th>Bias</th><th>Entry</th><th>SL</th><th>T1</th><th>T2</th><th>R:R</th><th>52W%</th><th>Del</th></tr></thead>
+        <tbody id="plans-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 5: EOD IMPORT -->
+<div class="tab-panel" id="tab-eod">
+  <div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px;padding-bottom:5px;border-bottom:1px solid var(--border);margin-bottom:13px;">&#11015; EOD DATA IMPORT &mdash; AFTER 3PM SESSION CLOSE &middot; MON&ndash;FRI</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px;">
+    <div class="eod-section">
+      <div class="eod-title" style="color:var(--q);">&#9670; Import EOD Data</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--bg3);border-radius:6px;margin-bottom:9px;">
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--muted);">&#127974; Nepal Public Holiday / Market Closed</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:1px;">Toggle ON to skip import today</div>
+        </div>
+        <div onclick="toggleHoliday()" id="toggle-btn" style="width:44px;height:22px;background:var(--bg2);border:1px solid var(--border2);border-radius:11px;position:relative;cursor:pointer;transition:.3s;">
+          <div id="toggle-knob" style="position:absolute;height:16px;width:16px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:.3s;"></div>
+        </div>
+      </div>
+      <div class="eod-status">
+        <div class="eod-status-row"><span class="eod-status-key">Last Import</span><span class="eod-status-val neut" id="eod-last-import">Never</span></div>
+        <div class="eod-status-row"><span class="eod-status-key">Scrips Loaded</span><span class="eod-status-val" id="eod-scrips-count">0</span></div>
+        <div class="eod-status-row"><span class="eod-status-key">Session Status</span><span class="eod-status-val bull" id="eod-session-status">Ready for import</span></div>
+        <div class="eod-status-row"><span class="eod-status-key">Market Day</span><span class="eod-status-val" id="eod-market-day">&mdash;</span></div>
+      </div>
+      <div class="eod-drop" id="eod-drop-zone"
+        ondragover="event.preventDefault();this.classList.add('dragover')"
+        ondragleave="this.classList.remove('dragover')"
+        ondrop="handleDrop(event)"
+        onclick="document.getElementById('eod-file-input').click()">
+        <div class="eod-drop-icon">&#128194;</div>
+        <div class="eod-drop-text"><b style="color:#fff;">Click or drag CSV file here</b><br>Export from Google Sheets after 3pm<br>File &rarr; Download &rarr; CSV (.csv)</div>
+      </div>
+      <input type="file" id="eod-file-input" accept=".csv" style="display:none;" onchange="handleFileInput(this)">
+      <div style="background:var(--bg3);border-radius:5px;padding:9px 12px;margin-bottom:11px;font-family:var(--mono);font-size:9px;line-height:2;">
+        <div style="color:var(--q);font-weight:700;margin-bottom:4px;">Your Sheet Column Order (hardcoded):</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
+          <div><span style="color:var(--muted);">A,B</span>&rarr;Empty</div>
+          <div><span style="color:var(--muted);">C</span>&rarr;S.No</div>
+          <div><span style="color:var(--q);">D</span>&rarr;Symbol</div>
+          <div><span style="color:var(--q);">E</span>&rarr;LTP</div>
+          <div><span style="color:var(--muted);">F</span>&rarr;Pt Chg</div>
+          <div><span style="color:var(--muted);">G</span>&rarr;%Chg</div>
+          <div><span style="color:var(--q);">H</span>&rarr;Open</div>
+          <div><span style="color:var(--q);">I</span>&rarr;High</div>
+          <div><span style="color:var(--q);">J</span>&rarr;Low</div>
+          <div><span style="color:var(--q);">K</span>&rarr;Volume</div>
+          <div><span style="color:var(--muted);">L</span>&rarr;Prev.Close</div>
+        </div>
+        <div style="margin-top:6px;color:var(--m);">&#9432; Close = LTP &middot; Range = High-Low (auto)</div>
+      </div>
+      <button class="btn-q" style="width:100%;padding:12px;font-size:12px;" onclick="processImport()">&#11015; Import EOD Data</button>
+      <button class="btn-bear" style="width:100%;margin-top:7px;" onclick="clearEOD()">&#8635; Clear Data</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px;">
+        <button class="btn-m" onclick="exportEODBackup()">&#128190; Backup EOD</button>
+        <button class="btn-l" onclick="document.getElementById('eod-restore-input').click()">&#8635; Restore EOD</button>
+      </div>
+      <input type="file" id="eod-restore-input" accept=".json" style="display:none;" onchange="restoreEODBackup(this)">
+      <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px;text-align:center;">
+        Backup saves all imported scrips &middot; Restore if browser cache cleared
+      </div>
+    </div>
+    <div class="eod-section">
+      <div class="eod-title" style="color:var(--m);">&#9670; How To Export from Google Sheets</div>
+      <div style="font-family:var(--mono);font-size:10px;line-height:2;color:var(--text);">
+        <div style="color:var(--q);font-weight:700;margin-bottom:6px;">Every day after 3pm:</div>
+        <div style="padding:7px 11px;background:var(--bg3);border-radius:5px;margin-bottom:9px;line-height:2.2;">
+          <span style="color:var(--l);">1.</span> Open your Google Sheet<br>
+          <span style="color:var(--l);">2.</span> Click <b>File</b> menu<br>
+          <span style="color:var(--l);">3.</span> Click <b>Download</b><br>
+          <span style="color:var(--l);">4.</span> Click <b>Comma Separated Values (.csv)</b><br>
+          <span style="color:var(--l);">5.</span> Come back here &rarr; drag that CSV file<br>
+          <span style="color:var(--l);">6.</span> Click Import &#10003;
+        </div>
+        <div style="color:var(--q);font-weight:700;margin-bottom:6px;">Market Schedule:</div>
+        <div style="padding:7px 11px;background:var(--bg3);border-radius:5px;margin-bottom:9px;line-height:2;">
+          <span style="color:var(--bull);">&#9679;</span> Trading days: Mon&ndash;Fri<br>
+          <span style="color:var(--bear);">&#9679;</span> Closed: Sat, Sun + Public holidays<br>
+          <span style="color:var(--neutral);">&#9679;</span> Session close: 3:00 PM NPT<br>
+          <span style="color:var(--neutral);">&#9679;</span> Always use unadjusted prices
+        </div>
+        <div style="padding:9px 12px;background:rgba(124,106,240,0.08);border:1px solid rgba(124,106,240,0.2);border-radius:5px;font-size:9px;line-height:1.8;">
+          <span style="color:var(--q);font-weight:700;">Range Signals:</span><br>
+          &#9889; Bolt candle = small range + vol &gt;500K<br>
+          &#9888; Distribution = large range + vol &gt;500K<br>
+          &#128164; Dry phase = vol &lt;50K (accumulation watch)<br>
+          &#128308; Wide spread = range% &gt;1.5%
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="panel" id="eod-preview" style="display:none;">
+    <div class="panel-head">
+      <span class="panel-title">EOD Data Preview</span>
+      <span class="panel-badge" id="eod-preview-count">0 scrips</span>
+    </div>
+    <div style="overflow-x:auto;max-height:380px;overflow-y:auto;">
+      <table class="eod-table">
+        <thead><tr><th>#</th><th>Scrip</th><th>Open</th><th>High</th><th>Low</th><th>LTP/Close</th><th>Volume</th><th>Range</th><th>Range%</th><th>52W High</th><th>52W Low</th><th>Signal</th></tr></thead>
+        <tbody id="eod-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 6: WEEKLY -->
+<div class="tab-panel" id="tab-weekly">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:13px;text-align:center;">
+    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Weekly Completion</div>
+    <div style="font-size:38px;font-weight:700;" id="wk-pct">0%</div>
+    <div style="height:7px;background:var(--bg3);border-radius:4px;margin:10px 0 5px;overflow:hidden;"><div id="wk-bar" style="height:100%;border-radius:4px;transition:width .4s;background:var(--neutral);width:0%;"></div></div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);" id="wk-status">0 of 12 tasks</div>
+  </div>
+  <input id="wk-week" style="margin-bottom:12px;font-size:11px;" placeholder="Week of: e.g. 07 Jul - 11 Jul 2026" oninput="saveWkState()">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;">
+    <div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:var(--q);text-transform:uppercase;margin-bottom:8px;">&#9670; Data Update</div>
+      <div class="wk-item" id="wi-1" onclick="toggleWk(1)"><div class="wk-check" id="wc-1"></div><span class="wk-text">Weekly OHLC entered</span><span class="wk-badge">Edit tab</span></div>
+      <div class="wk-item" id="wi-2" onclick="toggleWk(2)"><div class="wk-check" id="wc-2"></div><span class="wk-text">Weekly pivot calculated</span><span class="wk-badge">P=(H+L+C)/3</span></div>
+      <div class="wk-item" id="wi-3" onclick="toggleWk(3)"><div class="wk-check" id="wc-3"></div><span class="wk-text">DPO 21 updated</span><span class="wk-badge">Cycle check</span></div>
+      <div class="wk-item" id="wi-4" onclick="toggleWk(4)"><div class="wk-check" id="wc-4"></div><span class="wk-text">Volume noted</span><span class="wk-badge">7B/7M rule</span></div>
+      <div class="wk-item" id="wi-5" onclick="toggleWk(5)"><div class="wk-check" id="wc-5"></div><span class="wk-text">QML levels reviewed</span><span class="wk-badge">Levels tab</span></div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:var(--m);text-transform:uppercase;margin:11px 0 8px;">&#9670; Signal Check</div>
+      <div class="wk-item" id="wi-6" onclick="toggleWk(6)"><div class="wk-check" id="wc-6"></div><span class="wk-text">Signal Engine calculated</span><span class="wk-badge">Signal tab</span></div>
+      <div class="wk-item" id="wi-7" onclick="toggleWk(7)"><div class="wk-check" id="wc-7"></div><span class="wk-text">First candle pivot bias</span><span class="wk-badge">Above/Below P</span></div>
+      <div class="wk-item" id="wi-8" onclick="toggleWk(8)"><div class="wk-check" id="wc-8"></div><span class="wk-text">Volume dry or spike</span><span class="wk-badge">VSA check</span></div>
+      <div class="wk-item" id="wi-9" onclick="toggleWk(9)"><div class="wk-check" id="wc-9"></div><span class="wk-text">HydroPower sector check</span><span class="wk-badge">Sector drag?</span></div>
+    </div>
+    <div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:var(--l);text-transform:uppercase;margin-bottom:8px;">&#9670; Publish &amp; Share</div>
+      <div class="wk-item" id="wi-10" onclick="toggleWk(10)"><div class="wk-check" id="wc-10"></div><span class="wk-text">EOD data imported</span><span class="wk-badge">EOD tab</span></div>
+      <div class="wk-item" id="wi-11" onclick="toggleWk(11)"><div class="wk-check" id="wc-11"></div><span class="wk-text">Dashboard file updated</span><span class="wk-badge">tiiny.host</span></div>
+      <div class="wk-item" id="wi-12" onclick="toggleWk(12)"><div class="wk-check" id="wc-12"></div><span class="wk-text">Video / post published</span><span class="wk-badge">YouTube TikTok</span></div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin:11px 0 8px;">&#9670; Weekly Notes</div>
+      <textarea id="wk-notes" style="width:100%;min-height:130px;resize:vertical;font-family:var(--mono);font-size:11px;background:var(--bg3);border:1px solid var(--border2);color:#fff;border-radius:4px;padding:8px;outline:none;line-height:1.6;" placeholder="This week observations&#10;Key levels to watch&#10;Gann cycle count&#10;Sector notes..." oninput="saveWkState()"></textarea>
+      <div style="display:flex;gap:7px;margin-top:9px;">
+        <button class="btn-muted" style="flex:1;" onclick="resetChecklist()">&#8635; Reset</button>
+        <button class="btn-m" style="flex:1;" onclick="exportWeekly()">&#11015; Export</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 7: EDIT -->
+<div class="tab-panel" id="tab-editor">
+  <div class="export-bar">
+    <span class="export-label">Changes &#9658;</span>
+    <button class="btn-q" onclick="applyEdits()">&#10003; Apply &amp; Save</button>
+    <button class="btn-m" onclick="exportCSV()" style="margin-left:7px;">&#11015; CSV</button>
+    <button class="btn-q" onclick="exportXLSX()">&#11015; Excel</button>
+  </div>
+  <div class="edit-grid">
+    <div class="edit-section">
+      <div class="edit-section-title">Market Data (OHLCV)</div>
+      <div class="field-row"><span class="field-label">Ticker / Scrip</span><input id="e-ticker" value="NEPSE"></div>
+      <div class="field-row"><span class="field-label">Date</span><input id="e-date" value="2025-12-11" type="date"></div>
+      <div class="field-row"><span class="field-label">Open</span><input id="e-open" value="2608.10" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">High</span><input id="e-high" value="2611.99" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">Low</span><input id="e-low" value="2601.50" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">Close / LTP</span><input id="e-close" value="2607.37" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">Net Volume</span><input id="e-vol" value="-3.498B"></div>
+      <div class="field-row"><span class="field-label">Change Display</span><input id="e-chg" value="-1.66 (-0.06%)"></div>
+    </div>
+    <div class="edit-section">
+      <div class="edit-section-title">Indicator Values</div>
+      <div class="field-row"><span class="field-label">RSI 14</span><input id="e-rsi" value="51.25" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">WMA 9 (RSI)</span><input id="e-wma" value="49.12" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">DPO 21</span><input id="e-dpo" value="30.59" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">SEB 21</span><input id="e-seb" value="2649.03" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">DC-89 Mid</span><input id="e-dc89" value="2653.67" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">Ichimoku</span><select id="e-ich"><option value="below">Below cloud (Bearish)</option><option value="inside">Inside cloud (Neutral)</option><option value="above">Above cloud (Bullish)</option></select></div>
+      <div class="field-row"><span class="field-label">52W High</span><input id="e-52wh" value="3028.79" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">52W Low</span><input id="e-52wl" value="2200.00" type="number" step="0.01"></div>
+    </div>
+    <div class="edit-section">
+      <div class="edit-section-title">Trade Plan Values</div>
+      <div class="field-row"><span class="field-label">Entry Low</span><input id="e-entry-lo" value="2600" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">Entry High</span><input id="e-entry-hi" value="2607.37" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">Stop Loss</span><input id="e-sl" value="2487.17" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">Target 1 Low</span><input id="e-t1lo" value="2653" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">Target 1 High</span><input id="e-t1hi" value="2659" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">Target 2 Low</span><input id="e-t2lo" value="2689" type="number" step="0.01"></div>
+      <div class="field-row"><span class="field-label">Target 2 High</span><input id="e-t2hi" value="2700" type="number" step="0.01"></div>
+    </div>
+    <div class="edit-section">
+      <div class="edit-section-title">Structure Signal Text</div>
+      <div class="field-row full"><span class="field-label">Q Structure</span><input id="e-sig-q" value="Downtrend from 3,028"></div>
+      <div class="field-row full"><span class="field-label">M Structure</span><input id="e-sig-m" value="Below all M levels"></div>
+      <div class="field-row full"><span class="field-label">L Structure</span><input id="e-sig-l" value="Inside L range"></div>
+      <div class="field-row full"><span class="field-label">Price vs SEB</span><input id="e-sig-seb" value="Below 2,649 Bearish"></div>
+      <div class="field-row full"><span class="field-label">Price vs DC-89</span><input id="e-sig-dc" value="Below midline"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 8: LEVELS -->
+<div class="tab-panel" id="tab-levels">
+  <div class="export-bar">
+    <span class="export-label">Levels &#9658;</span>
+    <button class="btn-add" onclick="addLevel()">+ Add Level</button>
+    <button class="btn-q" onclick="applyEdits()" style="margin-left:7px;">&#10003; Apply &amp; Save</button>
+    <button class="btn-m" onclick="exportCSV()">&#11015; CSV</button>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span class="panel-title">QML Level Manager</span><span class="panel-badge">Edit &middot; Add &middot; Remove &middot; Auto-saves</span></div>
+    <div style="overflow-x:auto;">
+      <table class="levels-edit-table">
+        <thead><tr><th>#</th><th>Tier</th><th>Type</th><th>Price</th><th>Confluence</th><th>Class</th><th>Note</th><th>Del</th></tr></thead>
+        <tbody id="lvl-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div style="display:flex;gap:16px;align-items:center;">
+    <a class="footer-link" href="https://nepsevibes.com" target="_blank">&#9670; nepsevibes.com</a>
+    <a class="footer-link" href="https://tradevibes.blogspot.com/" target="_blank">&#9670; tradevibes.blogspot.com</a>
+  </div>
+  <div class="footer-time">QML DASHBOARD v2.0 &middot; TRADE WITH VIBES &middot; DATA: SHAREHUBNEPAL.COM</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+// ==============================
+// PRESETS - Updated 07-Jul-2026
+// ==============================
+var presets={
+NEPSE:{
+  state:{ticker:'NEPSE',date:'2026-07-13',open:2620,high:2625,low:2598,close:2570.18,vol:'-4.6B',chg:'-30.60 (-1.17%)',rsi:42,wma:44,dpo:-18,seb:2680,dc89:2690,ichimoku:'below',w52h:3028,w52l:2200,entryLo:2600,entryHi:2627,sl:2487,t1lo:2653,t1hi:2680,t2lo:2700,t2hi:2750,sigQ:'Below pivot 2,641 - bearish',sigM:'Below all M levels',sigL:'Inside L range',sigSEB:'Below SEB 2,680',sigDC:'Below DC-89 2,690'},
+  levels:[{tier:'Q',type:'Res',price:3028,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:2750,conf:'M+DC89',confClass:'conf-md',note:'Monthly swing'},{tier:'M',type:'Res',price:2690,conf:'M+DC89',confClass:'conf-md',note:'DC-89 midline'},{tier:'M',type:'Res',price:2680,conf:'M+SEB',confClass:'conf-md',note:'SEB 21 band'},{tier:'L',type:'Res',price:2653,conf:'L',confClass:'conf-lo',note:'Local swing high'},{tier:'L',type:'Sup',price:2600,conf:'L',confClass:'conf-lo',note:'Local swing low'},{tier:'M',type:'Sup',price:2487,conf:'M+Q',confClass:'conf-md',note:'M-Q confluence'},{tier:'Q',type:'Sup',price:2200,conf:'52W LOW',confClass:'conf-hi',note:'Q floor'}]
+},
+BANKING:{
+  state:{ticker:'BANKING',date:'2026-07-13',open:1432,high:1435,low:1418,close:1405.52,vol:'N/A',chg:'-9.64 (-0.68%)',rsi:40,wma:42,dpo:-12,seb:1480,dc89:1460,ichimoku:'below',w52h:1750,w52l:1180,entryLo:1400,entryHi:1420,sl:1180,t1lo:1460,t1hi:1480,t2lo:1550,t2hi:1620,sigQ:'Below Q 1,750',sigM:'Below all M levels',sigL:'Testing L support',sigSEB:'Below SEB 1,480',sigDC:'Below DC-89 1,460'},
+  levels:[{tier:'Q',type:'Res',price:1750,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:1550,conf:'M',confClass:'conf-md',note:'Monthly swing'},{tier:'M',type:'Res',price:1480,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:1460,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:1418,conf:'L',confClass:'conf-lo',note:'Today low'},{tier:'Q',type:'Sup',price:1180,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+DEVBANK:{
+  state:{ticker:'DEVBANK',date:'2026-07-13',open:5645,high:5650,low:5620,close:5475.84,vol:'N/A',chg:'-46.18 (-0.83%)',rsi:44,wma:43,dpo:-8,seb:5800,dc89:5750,ichimoku:'below',w52h:6800,w52l:4500,entryLo:5600,entryHi:5632,sl:4500,t1lo:5750,t1hi:5800,t2lo:6000,t2hi:6200,sigQ:'Below Q 6,800',sigM:'Below M levels',sigL:'L range holding',sigSEB:'Below SEB 5,800',sigDC:'Below DC-89 5,750'},
+  levels:[{tier:'Q',type:'Res',price:6800,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:6200,conf:'M',confClass:'conf-md',note:'Monthly high'},{tier:'M',type:'Res',price:5800,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:5750,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:5620,conf:'L',confClass:'conf-lo',note:'Today low'},{tier:'Q',type:'Sup',price:4500,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+FINANCE:{
+  state:{ticker:'FINANCE',date:'2026-07-13',open:2445,high:2448,low:2425,close:2356.86,vol:'N/A',chg:'-31.60 (-1.32%)',rsi:38,wma:40,dpo:-15,seb:2550,dc89:2500,ichimoku:'below',w52h:3100,w52l:1900,entryLo:2400,entryHi:2431,sl:1900,t1lo:2500,t1hi:2550,t2lo:2700,t2hi:2800,sigQ:'Below Q 3,100',sigM:'Below M levels',sigL:'Testing support',sigSEB:'Below SEB 2,550',sigDC:'Below DC-89 2,500'},
+  levels:[{tier:'Q',type:'Res',price:3100,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:2700,conf:'M',confClass:'conf-md',note:'Monthly high'},{tier:'M',type:'Res',price:2550,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:2500,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:2425,conf:'L',confClass:'conf-lo',note:'Today low'},{tier:'Q',type:'Sup',price:1900,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+MICROFINANCE:{
+  state:{ticker:'MICROFINANCE',date:'2026-07-13',open:4648,high:4652,low:4620,close:4539.86,vol:'N/A',chg:'-39.99 (-0.87%)',rsi:39,wma:41,dpo:-22,seb:4900,dc89:4800,ichimoku:'below',w52h:5800,w52l:3500,entryLo:4600,entryHi:4631,sl:3500,t1lo:4800,t1hi:4900,t2lo:5100,t2hi:5400,sigQ:'Downtrend from 5,800',sigM:'Below all M levels',sigL:'Testing local support',sigSEB:'Below SEB 4,900',sigDC:'Below DC-89 4,800'},
+  levels:[{tier:'Q',type:'Res',price:5800,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:5100,conf:'M',confClass:'conf-md',note:'Monthly high'},{tier:'M',type:'Res',price:4900,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:4800,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:4620,conf:'L',confClass:'conf-lo',note:'Today low'},{tier:'Q',type:'Sup',price:3500,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+HYDROPOWER:{
+  state:{ticker:'HYDROPOWER',date:'2026-07-13',open:3670,high:3675,low:3648,close:3522.94,vol:'N/A',chg:'-71.24 (-1.98%)',rsi:36,wma:38,dpo:-28,seb:3900,dc89:3800,ichimoku:'below',w52h:4500,w52l:3000,entryLo:3600,entryHi:3656,sl:3000,t1lo:3800,t1hi:3900,t2lo:4100,t2hi:4300,sigQ:'Sector drag on NEPSE',sigM:'Below all M levels',sigL:'Capitulation zone',sigSEB:'Below SEB 3,900',sigDC:'Below DC-89 3,800'},
+  levels:[{tier:'Q',type:'Res',price:4500,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:4100,conf:'M',confClass:'conf-md',note:'Monthly high'},{tier:'M',type:'Res',price:3900,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:3800,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:3648,conf:'L',confClass:'conf-lo',note:'Today low'},{tier:'Q',type:'Sup',price:3000,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+NONLIFEINSU:{
+  state:{ticker:'NONLIFEINSU',date:'2026-07-13',open:10820,high:10850,low:10720,close:10562.46,vol:'N/A',chg:'-80.24 (-0.75%)',rsi:41,wma:42,dpo:-85,seb:11200,dc89:11000,ichimoku:'below',w52h:13000,w52l:8500,entryLo:10700,entryHi:10740,sl:8500,t1lo:11000,t1hi:11200,t2lo:11800,t2hi:12200,sigQ:'Below Q 13,000',sigM:'Below M cluster',sigL:'Inside L range',sigSEB:'Below SEB 11,200',sigDC:'Below DC-89 11,000'},
+  levels:[{tier:'Q',type:'Res',price:13000,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:11800,conf:'M',confClass:'conf-md',note:'Monthly high'},{tier:'M',type:'Res',price:11200,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:11000,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:10720,conf:'L',confClass:'conf-lo',note:'Today low'},{tier:'Q',type:'Sup',price:8500,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+LIFEINSU:{
+  state:{ticker:'LIFEINSU',date:'2026-07-13',open:12108,high:12110,low:11990,close:11795.45,vol:'N/A',chg:'-128.29 (-1.07%)',rsi:43,wma:44,dpo:-60,seb:12500,dc89:12300,ichimoku:'below',w52h:14500,w52l:9800,entryLo:11980,entryHi:12024,sl:9800,t1lo:12300,t1hi:12500,t2lo:13000,t2hi:13500,sigQ:'Below Q 14,500',sigM:'Below M levels',sigL:'L range intact',sigSEB:'Below SEB 12,500',sigDC:'Below DC-89 12,300'},
+  levels:[{tier:'Q',type:'Res',price:14500,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:13000,conf:'M',confClass:'conf-md',note:'Monthly high'},{tier:'M',type:'Res',price:12500,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:12300,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:11980,conf:'L',confClass:'conf-lo',note:'Today low'},{tier:'Q',type:'Sup',price:9800,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+HOTELS:{
+  state:{ticker:'HOTELS',date:'2026-07-13',open:7345,high:7350,low:7290,close:7031.3,vol:'N/A',chg:'-142.99 (-1.99%)',rsi:45,wma:44,dpo:-20,seb:7600,dc89:7500,ichimoku:'below',w52h:8800,w52l:5800,entryLo:7290,entryHi:7312,sl:5800,t1lo:7500,t1hi:7600,t2lo:7900,t2hi:8200,sigQ:'Below Q 8,800',sigM:'Testing M resistance',sigL:'Inside L range',sigSEB:'Below SEB 7,600',sigDC:'Below DC-89 7,500'},
+  levels:[{tier:'Q',type:'Res',price:8800,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:7900,conf:'M',confClass:'conf-md',note:'Monthly high'},{tier:'M',type:'Res',price:7600,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:7500,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:7290,conf:'L',confClass:'conf-lo',note:'Today low'},{tier:'Q',type:'Sup',price:5800,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+TRADING:{
+  state:{ticker:'TRADING',date:'2026-07-13',open:3348,high:3352,low:3265,close:3223.33,vol:'N/A',chg:'-75.94 (-2.30%)',rsi:32,wma:35,dpo:-45,seb:3600,dc89:3500,ichimoku:'below',w52h:4200,w52l:2500,entryLo:3265,entryHi:3278,sl:2500,t1lo:3500,t1hi:3600,t2lo:3800,t2hi:4000,sigQ:'Sharp drop -3.15% today',sigM:'Below all M levels',sigL:'Breakdown watch',sigSEB:'Below SEB 3,600',sigDC:'Below DC-89 3,500'},
+  levels:[{tier:'Q',type:'Res',price:4200,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:3800,conf:'M',confClass:'conf-md',note:'Monthly high'},{tier:'M',type:'Res',price:3600,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:3500,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:3265,conf:'L',confClass:'conf-lo',note:'Today low'},{tier:'Q',type:'Sup',price:2500,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+MANUFACTURING:{
+  state:{ticker:'MANUFACTURING',date:'2026-07-13',open:10520,high:10525,low:10400,close:10116.96,vol:'N/A',chg:'-140.24 (-1.36%)',rsi:40,wma:42,dpo:-90,seb:10900,dc89:10700,ichimoku:'below',w52h:12500,w52l:8500,entryLo:10400,entryHi:10429,sl:8500,t1lo:10700,t1hi:10900,t2lo:11200,t2hi:11800,sigQ:'Below Q 12,500',sigM:'Below M levels',sigL:'L range holding',sigSEB:'Below SEB 10,900',sigDC:'Below DC-89 10,700'},
+  levels:[{tier:'Q',type:'Res',price:12500,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:11200,conf:'M',confClass:'conf-md',note:'Monthly high'},{tier:'M',type:'Res',price:10900,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:10700,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:10400,conf:'L',confClass:'conf-lo',note:'Today low'},{tier:'Q',type:'Sup',price:8500,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+INVESTMENT:{
+  state:{ticker:'INVESTMENT',date:'2026-07-13',open:97.2,high:97.3,low:96.5,close:94.95,vol:'N/A',chg:'-0.84 (-0.88%)',rsi:43,wma:44,dpo:-3,seb:102,dc89:100,ichimoku:'below',w52h:120,w52l:75,entryLo:96,entryHi:96.58,sl:75,t1lo:100,t1hi:102,t2lo:108,t2hi:115,sigQ:'Below Q 120',sigM:'Below M levels',sigL:'Inside L range',sigSEB:'Below SEB 102',sigDC:'Below DC-89 100'},
+  levels:[{tier:'Q',type:'Res',price:120,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:108,conf:'M',confClass:'conf-md',note:'Monthly high'},{tier:'M',type:'Res',price:102,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:100,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:96.5,conf:'L',confClass:'conf-lo',note:'Today low'},{tier:'Q',type:'Sup',price:75,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+OTHERS:{
+  state:{ticker:'OTHERS',date:'2026-07-13',open:1920,high:1922,low:1908,close:1883.62,vol:'N/A',chg:'-16.27 (-0.85%)',rsi:44,wma:45,dpo:-8,seb:1980,dc89:1950,ichimoku:'below',w52h:2300,w52l:1500,entryLo:1908,entryHi:1913,sl:1500,t1lo:1950,t1hi:1980,t2lo:2050,t2hi:2150,sigQ:'Below Q 2,300',sigM:'Below M levels',sigL:'L range intact',sigSEB:'Below SEB 1,980',sigDC:'Below DC-89 1,950'},
+  levels:[{tier:'Q',type:'Res',price:2300,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:2050,conf:'M',confClass:'conf-md',note:'Monthly high'},{tier:'M',type:'Res',price:1980,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:1950,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:1908,conf:'L',confClass:'conf-lo',note:'Today low'},{tier:'Q',type:'Sup',price:1500,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+MUTUALFUND:{
+  state:{ticker:'MUTUALFUND',date:'2026-07-13',open:21.6,high:21.65,low:21.5,close:21.3,vol:'N/A',chg:'-0.17 (-0.81%)',rsi:46,wma:47,dpo:-0.5,seb:22.5,dc89:22.2,ichimoku:'below',w52h:26,w52l:18,entryLo:21.5,entryHi:21.56,sl:18,t1lo:22.2,t1hi:22.5,t2lo:23.5,t2hi:24.5,sigQ:'Below Q 26',sigM:'Below M levels',sigL:'Inside L range',sigSEB:'Below SEB 22.5',sigDC:'Below DC-89 22.2'},
+  levels:[{tier:'Q',type:'Res',price:26,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:23.5,conf:'M',confClass:'conf-md',note:'Monthly high'},{tier:'M',type:'Res',price:22.5,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:22.2,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:21.5,conf:'L',confClass:'conf-lo',note:'Today low'},{tier:'Q',type:'Sup',price:18,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+EBL:{
+  state:{ticker:'EBL',date:'2026-07-07',open:701,high:709,low:700,close:700,vol:'14,095',chg:'0.00 (0.00%)',rsi:42,wma:44,dpo:-8.5,seb:740,dc89:720,ichimoku:'below',w52h:850,w52l:620,entryLo:700,entryHi:705,sl:620,t1lo:720,t1hi:740,t2lo:780,t2hi:820,sigQ:'Below Q 850',sigM:'Below M levels',sigL:'At L support 700 dry phase',sigSEB:'Below SEB 740',sigDC:'Below DC-89 720'},
+  levels:[{tier:'Q',type:'Res',price:850,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:780,conf:'M',confClass:'conf-md',note:'M swing high'},{tier:'M',type:'Res',price:740,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:720,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:700,conf:'L+ROUND',confClass:'conf-lo',note:'Round number support'},{tier:'Q',type:'Sup',price:620,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+},
+NABIL:{
+  state:{ticker:'NABIL',date:'2026-07-07',open:525,high:541,low:519,close:530,vol:'114,343',chg:'+5.00 (+0.95%)',rsi:45,wma:44,dpo:-12,seb:560,dc89:545,ichimoku:'below',w52h:680,w52l:480,entryLo:519,entryHi:530,sl:480,t1lo:545,t1hi:560,t2lo:600,t2hi:640,sigQ:'Below Q 680',sigM:'Below M levels',sigL:'Testing L support',sigSEB:'Below SEB 560',sigDC:'Below DC-89 545'},
+  levels:[{tier:'Q',type:'Res',price:680,conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling'},{tier:'M',type:'Res',price:620,conf:'M',confClass:'conf-md',note:'M swing high'},{tier:'M',type:'Res',price:560,conf:'M+SEB',confClass:'conf-md',note:'SEB 21'},{tier:'L',type:'Res',price:545,conf:'L+DC89',confClass:'conf-lo',note:'DC-89'},{tier:'L',type:'Sup',price:519,conf:'L',confClass:'conf-lo',note:'Local swing low'},{tier:'Q',type:'Sup',price:480,conf:'Q',confClass:'conf-hi',note:'52W Low'}]
+}
+};
+// ==============================
+// HELPERS
+// ==============================
+function fmt(n){return Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function pct(a,b){return b?((a-b)/b*100).toFixed(2):'0.00';}
+function fmtDate(d){try{var dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return d;}}
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
+function setTodayDate(){var d=document.getElementById('jf-date');if(d&&!d.value)d.value=new Date().toISOString().split('T')[0];}
+
+// ==============================
+// AUTO-SAVE
+// ==============================
+function autoSave(){
+  try{
+    localStorage.setItem('twv_state',JSON.stringify(state));
+    localStorage.setItem('twv_levels',JSON.stringify(levels));
+    var now=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    localStorage.setItem('twv_saved_date',now);
+    var el=document.getElementById('hdr-saved');
+    if(el) el.innerHTML='&#128190; Saved: '+now;
+  }catch(e){}
+}
+function loadSavedState(){
+  try{
+    var ss=localStorage.getItem('twv_state');
+    var sl=localStorage.getItem('twv_levels');
+    var sd=localStorage.getItem('twv_saved_date');
+    if(ss){state=JSON.parse(ss);}
+    if(sl){levels=JSON.parse(sl);}
+    var el=document.getElementById('hdr-saved');
+    if(el&&sd) el.innerHTML='&#128190; Last saved: '+sd;
+    else if(el) el.innerHTML='&#128190; Not saved yet';
+  }catch(e){}
+}
+
+// ==============================
+// TABS
+// ==============================
+function switchTab(id){
+  var tabs=['dashboard','signal','journal','planner','eod','weekly','editor','levels'];
+  document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('active',tabs[i]===id);});
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.toggle('active',p.id==='tab-'+id);});
+  if(id==='levels'){renderLevelEditor();autoFillLevelsFromState();}
+  if(id==='weekly') loadWkState();
+  if(id==='journal'){loadJournal();setTodayDate();syncJournalScrip();}
+  if(id==='planner'){loadPlans();renderPlansTable();}
+  if(id==='eod') initEOD();
+  if(id==='signal') autoFillSignalEngine();
+}
+
+// ==============================
+// PRESET LOADER
+// ==============================
+var sectorScripMap={
+  'BANKING':['NABIL','NIMB','SCB','HBL','SBI','EBL','NICA','MBL','LSL','KBL','SBL','SANIMA','ADBL','GBIME','CZBIL','PCBL','NMB','PRVU','NBL','BOK'],
+  'DEVBANK':['NABBC','EDBL','LBBL','MDB','MLBL','GBBL','JBBL','CORBL','KSBBL','SADBL','SHINE','MNBBL','SAPDBL','SINDU','SKBBL','GRDBL','SABBL','NESDO'],
+  'FINANCE':['NFS','GUFL','BFC','GFCL','SIFC','CFCL','JFL','GMFIL','ICFC','PROFL','MFIL','RLFL','MPFL'],
+  'MICROFINANCE':['NUBL','CBBL','DDBL','SWBBL','NMBMF','GILB','SWMF','MERO','NICLBSL','NMLBBL','HLBSL','MATRI','JSLBB','SLBBL','KMCDB','MLBBL','MSLB','SMATA','FOWAD','GMFBS','RSDC','NMFBS','SMB','USLB','WNLB','NADEP','JBLB','LLBS','VLBS','ACLBSL','SLBSL','ALBSL','AVYAN','DLBS','ILBS','MLBS','SMPDA','CYCL','ULBSL','SWASTIK','ANLB','GLBSL','SKBBL'],
+  'HYDROPOWER':['NHPC','BPCL','CHCL','AHPC','UPPER','RIDI','BARUN','KPCL','AKJCL','API','NGPL','NHDL','RADHI','MHNL','PPCL','HURJA','UMHL','SSHL','RHPL','SJCL','HDHPC','HPPL','MEN','UMRH','PMHPL','SGHC','MHL','USHEC','SHEL','RURU','AKPL','SPDL','UNHPL','GHL','UPCL','MKHC','AHL','MKJC','SAHAS','TPC','SPC','NYADI','GVL','JOSHI','BHDC','HHL','UHEWA','MKHL','BHCL','DORDI','RFPL','PHCL','BHPL','SIKLES','MHCL','SMJC','MAKAR','MANDU','BGWT','BUNGAL','CHL','CKHL','DHEL','DHPL','DOLTI','EHPL','GLH','IHL','KAHL','KBSH','KKHC','LEC','MABEL','MCHL','MEL','MEHL','MMKJL','MSHL','PPL','RHGCL','RAWA','RLEL','SANVI','SKHEL','SKHL','SMHL','SNORL','SOHL','SPHL','SIPD','SPL','TAMOR','TPKHL','TSHL','TVCL','ULHC','USHL','VLUCL','YMHL','BEDC','BJHL','BNHC','SGHL','SHPC','HIMSTAR','SAGAR'],
+  'NONLIFEINSU':['NICL','RBCL','HEI','UAIL','SPIL','NIL','PRIN','SALICO','IGI','SGIC','NLG','SICL','NMIC'],
+  'LIFEINSU':['NLICL','NLIC','LICN','ALICL','HLI','SJLIC','SRLI','PMLI','CLI','RNLI','SNLI','ILI','GMLI','CREST'],
+  'HOTELS':['SHL','TRH','OHL','CGH','KDL','BANDIPUR','HFIN','CITY'],
+  'TRADING':['STC','BBC'],
+  'MANUFACTURING':['BNT','UNL','HDL','SHIVM','GCIL','SONA','SARBTM','HATHY','PCIL','SAIL','RSML','OMPL','SYPNL','SOPL'],
+  'INVESTMENT':['CIT','HIDCL','NIFRA','NRN','ENL','CHDC'],
+  'OTHERS':['NTC','NRIC','NRM','MKCL','NWCL','HRL','TTL','JHAPA','PURE'],
+  'MUTUALFUND':['NICBF','NMB50','SFMF','SBCF','C30MF','GIBF1','NIBLGF','SAGF','SLCF','LUK'],
+};
+
+
+// Auto-fill signal engine from current state
+function autoFillSignalEngine(){
+  // Fill close price
+  var sec=document.getElementById('se-close');
+  if(sec) sec.value=state.close;
+  // Auto-calculate pivot = (H+L+C)/3
+  var pivot=parseFloat(((state.high+state.low+state.close)/3).toFixed(2));
+  var spiv=document.getElementById('se-pivot');
+  if(spiv) spiv.value=pivot;
+  // Auto-fill RSI
+  var srsi=document.getElementById('se-rsi');
+  if(srsi) srsi.value=state.rsi;
+  // Auto-set DPO direction based on value
+  var sdpo=document.getElementById('se-dpo');
+  if(sdpo) sdpo.value=state.dpo;
+  var sdpoDir=document.getElementById('se-dpo-dir');
+  if(sdpoDir){
+    if(state.dpo>0) sdpoDir.value='rising';
+    else if(state.dpo<0) sdpoDir.value='falling';
+    else sdpoDir.value='flat';
+  }
+  // Show pivot and RSI hints
+  var pivHint=document.getElementById('se-pivot-hint');
+  var rsiHint=document.getElementById('se-rsi-hint');
+  var closeVsPivot=state.close>pivot?'ABOVE PIVOT - Bullish':'BELOW PIVOT - Bearish';
+  var closePivCol=state.close>pivot?'var(--bull)':'var(--bear)';
+  var rsiSig=state.rsi>50?'RSI > 50 - Bullish':'RSI < 50 - Bearish';
+  var rsiCol=state.rsi>50?'var(--bull)':'var(--bear)';
+  if(pivHint){pivHint.textContent=closeVsPivot;pivHint.style.color=closePivCol;}
+  if(rsiHint){rsiHint.textContent=rsiSig;rsiHint.style.color=rsiCol;}
+  toast(state.ticker+' loaded in Signal Engine - Pivot: '+pivot);
+}
+
+// Auto-fill levels from current state
+function autoFillLevelsFromState(){
+  if(state.w52h&&state.w52l&&state.w52h!==state.w52l){
+    autoFillLevels(state.ticker,state.close,state.w52h,state.w52l);
+    renderLevelEditor();
+  }
+}
+
+// Sync journal scrip to match active scrip
+function syncJournalScrip(){
+  var jf=document.getElementById('jf-sector');
+  var pc=document.getElementById('pc-sector');
+  if(jf){
+    Array.from(jf.options).forEach(function(o){
+      if(o.value===activeScrip||o.text===activeScrip) jf.value=o.value;
+    });
+  }
+  if(pc){
+    Array.from(pc.options).forEach(function(o){
+      if(o.value===activeScrip||o.text===activeScrip) pc.value=o.value;
+    });
+  }
+  // Pre-fill entry and SL from state
+  var je=document.getElementById('jf-entry');
+  var jsl=document.getElementById('jf-sl');
+  var pce=document.getElementById('pc-entry');
+  var pcsl=document.getElementById('pc-sl');
+  if(je&&!je.value) je.value=state.close;
+  if(jsl&&!jsl.value) jsl.value=state.low;
+  if(pce) pce.value=state.close;
+  if(pcsl) pcsl.value=state.low;
+  calcPosition();
+  var jd=document.getElementById('jf-scrip-display');
+  if(jd) jd.textContent=activeScrip+' - LTP: '+fmt(state.close)+' | High: '+fmt(state.high)+' | Low: '+fmt(state.low);
+}
+
+// Global active scrip tracker
+var activeScrip='NEPSE';
+
+function setActiveScrip(name){
+  activeScrip=name;
+  // Update ALL scrip selectors across tabs
+  ['scrip-select','jf-sector','pc-sector','fp-scrip'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(!el)return;
+    Array.from(el.options).forEach(function(opt){
+      if(opt.value===name||opt.text===name) el.value=opt.value;
+    });
+  });
+  // Update journal header
+  var jd=document.getElementById('jf-scrip-display');
+  if(jd) jd.textContent=name+' \u2014 LTP: '+fmt(state.close);
+  // Update signal engine fields
+  var sec=document.getElementById('se-close');
+  if(sec&&!sec.value) sec.value=state.close;
+}
+
+function loadPreset(name){
+  var p=presets[name];if(!p)return;
+  state=JSON.parse(JSON.stringify(p.state));
+  levels=JSON.parse(JSON.stringify(p.levels));
+  activeScrip=name;
+  setActiveScrip(name);
+  populateEditorFields();renderDashboard();autoSave();
+  toast(name+' loaded \u2714 saved');
+}
+function populateEditorFields(){
+  var m={'e-ticker':state.ticker,'e-date':state.date,'e-open':state.open,'e-high':state.high,'e-low':state.low,'e-close':state.close,'e-vol':state.vol,'e-chg':state.chg,'e-rsi':state.rsi,'e-wma':state.wma,'e-dpo':state.dpo,'e-seb':state.seb,'e-dc89':state.dc89,'e-52wh':state.w52h,'e-52wl':state.w52l,'e-entry-lo':state.entryLo,'e-entry-hi':state.entryHi,'e-sl':state.sl,'e-t1lo':state.t1lo,'e-t1hi':state.t1hi,'e-t2lo':state.t2lo,'e-t2hi':state.t2hi,'e-sig-q':state.sigQ,'e-sig-m':state.sigM,'e-sig-l':state.sigL,'e-sig-seb':state.sigSEB,'e-sig-dc':state.sigDC};
+  Object.keys(m).forEach(function(k){var el=document.getElementById(k);if(el)el.value=m[k];});
+  var ich=document.getElementById('e-ich');if(ich)ich.value=state.ichimoku||'below';
+}
+function applyEdits(){
+  state.ticker=document.getElementById('e-ticker').value;
+  state.date=document.getElementById('e-date').value;
+  state.open=parseFloat(document.getElementById('e-open').value)||0;
+  state.high=parseFloat(document.getElementById('e-high').value)||0;
+  state.low=parseFloat(document.getElementById('e-low').value)||0;
+  state.close=parseFloat(document.getElementById('e-close').value)||0;
+  state.vol=document.getElementById('e-vol').value;
+  state.chg=document.getElementById('e-chg').value;
+  state.rsi=parseFloat(document.getElementById('e-rsi').value)||0;
+  state.wma=parseFloat(document.getElementById('e-wma').value)||0;
+  state.dpo=parseFloat(document.getElementById('e-dpo').value)||0;
+  state.seb=parseFloat(document.getElementById('e-seb').value)||0;
+  state.dc89=parseFloat(document.getElementById('e-dc89').value)||0;
+  state.ichimoku=document.getElementById('e-ich').value;
+  state.w52h=parseFloat(document.getElementById('e-52wh').value)||0;
+  state.w52l=parseFloat(document.getElementById('e-52wl').value)||0;
+  state.entryLo=parseFloat(document.getElementById('e-entry-lo').value)||0;
+  state.entryHi=parseFloat(document.getElementById('e-entry-hi').value)||0;
+  state.sl=parseFloat(document.getElementById('e-sl').value)||0;
+  state.t1lo=parseFloat(document.getElementById('e-t1lo').value)||0;
+  state.t1hi=parseFloat(document.getElementById('e-t1hi').value)||0;
+  state.t2lo=parseFloat(document.getElementById('e-t2lo').value)||0;
+  state.t2hi=parseFloat(document.getElementById('e-t2hi').value)||0;
+  state.sigQ=document.getElementById('e-sig-q').value;
+  state.sigM=document.getElementById('e-sig-m').value;
+  state.sigL=document.getElementById('e-sig-l').value;
+  state.sigSEB=document.getElementById('e-sig-seb').value;
+  state.sigDC=document.getElementById('e-sig-dc').value;
+  collectLevelEdits();renderDashboard();switchTab('dashboard');autoSave();
+  toast('Saved \u2714 '+state.ticker+' '+fmtDate(state.date));
+}
+
+// ==============================
+// RENDER DASHBOARD
+// ==============================
+function renderDashboard(){
+  var c=state.close;
+  document.getElementById('hdr-price').textContent=state.ticker+' '+fmt(c);
+  var bear=(state.chg||'').indexOf('-')>-1;
+  var hc=document.getElementById('hdr-chg');
+  hc.textContent=(bear?'\u25bc':'\u25b2')+' '+state.chg+' \u00b7 Vol '+state.vol+' \u00b7 '+fmtDate(state.date);
+  hc.className=bear?'bear':'bull';
+  hc.style.fontFamily='var(--mono)';hc.style.fontSize='10px';
+  document.getElementById('badge-date').textContent=state.ticker+' \u00b7 '+fmtDate(state.date);
+  document.getElementById('d-open').textContent=fmt(state.open);
+  document.getElementById('d-high').textContent=fmt(state.high);
+  document.getElementById('d-low').textContent=fmt(state.low);
+  document.getElementById('d-close').textContent=fmt(c);
+  document.getElementById('d-vol').textContent=state.vol;
+  document.getElementById('d-date').textContent=fmtDate(state.date);
+  var r=state.rsi,w=state.wma,d=state.dpo,s=state.seb;
+  sInd('i-rsi','i-rsi-sig','i-rsi-bar',r.toFixed(2),r>60?'Overbought':r<40?'Oversold':'Neutral',r>60?'bull':r<40?'bear':'neut',r,100,r>50?'var(--bull)':'var(--neutral)');
+  sInd('i-wma','i-wma-sig','i-wma-bar',w.toFixed(2),r>w?'RSI>WMA \u25b2':'RSI<WMA \u25bc',r>w?'bull':'bear',w,100,r>w?'var(--bull)':'var(--bear)');
+  sInd('i-dpo','i-dpo-sig','i-dpo-bar',d.toFixed(2),d>0?'Cycle Up':'Cycle Down',d>0?'bull':'bear',Math.min(Math.abs(d)*1.5,100),100,d>0?'var(--m)':'var(--bear)');
+  sInd('i-seb','i-seb-sig','i-seb-bar',fmt(s),c>s?'Above Band':'Below Band',c>s?'bull':'bear',c>s?70:30,100,c>s?'var(--bull)':'var(--bear)');
+  var vn=(state.vol||'').indexOf('-')>-1;
+  sInd('i-nvol','i-nvol-sig','i-nvol-bar',state.vol,vn?'Distribution':'Accumulation',vn?'bear':'bull',vn?20:75,100,vn?'var(--bear)':'var(--bull)');
+  document.getElementById('sig-q').textContent=state.sigQ;
+  document.getElementById('sig-m').textContent=state.sigM;
+  document.getElementById('sig-l').textContent=state.sigL;
+  document.getElementById('sig-seb').textContent=state.sigSEB;
+  document.getElementById('sig-dc').textContent=state.sigDC;
+  document.getElementById('sig-ich').textContent=state.ichimoku==='above'?'Above cloud \u00b7 Bullish':state.ichimoku==='inside'?'Inside cloud \u00b7 Neutral':'Below cloud \u00b7 Bearish';
+  document.getElementById('sig-vol').textContent=state.vol+' \u00b7 '+(vn?'Distribution':'Accumulation');
+  renderBias();renderQMLTable();renderPriceMap();
+  document.getElementById('tp-ticker').textContent=state.ticker;
+  document.getElementById('tp-date').textContent=fmtDate(state.date);
+  document.getElementById('tp-entry').textContent=fmt(state.entryLo)+'\u2013'+fmt(state.entryHi);
+  document.getElementById('tp-sl').textContent=fmt(state.sl);
+  document.getElementById('tp-t1').textContent=fmt(state.t1lo)+'\u2013'+fmt(state.t1hi);
+  document.getElementById('tp-t2').textContent=fmt(state.t2lo)+'\u2013'+fmt(state.t2hi);
+  document.getElementById('tp-b').textContent='Below '+fmt(state.entryLo);
+  var em=(state.entryLo+state.entryHi)/2,risk=em-state.sl,rew=state.t1lo-em;
+  document.getElementById('rr-badge').textContent='R:R \u2248 1:'+(risk>0?(rew/risk).toFixed(1):'--')+' \u00b7 Entry '+fmt(em)+' \u2192 SL '+fmt(state.sl)+' \u2192 T1 '+fmt(state.t1lo);
+  var jd=document.getElementById('jf-scrip-display');if(jd)jd.textContent=state.ticker+' \u2014 LTP: '+fmt(c);
+  renderSectorBreadth();
+}
+
+function showSectorScrips(sector){
+  var panel=document.getElementById('sector-scrip-panel');
+  var list=document.getElementById('sector-scrip-list');
+  var title=document.getElementById('sector-panel-title');
+  if(!panel||!list)return;
+  var scrips=sectorScripMap[sector]||[];
+  if(!scrips.length){panel.style.display='none';return;}
+  title.textContent=sector+' -- '+scrips.length+' Scrips -- Click to load';
+  list.innerHTML='';
+  scrips.forEach(function(s){
+    var eodFound=eodData&&eodData.find(function(d){return d.scrip===s;});
+    var ltp=eodFound?fmt(eodFound.close):'--';
+    var isActive=s===activeScrip;
+    var btn=document.createElement('div');
+    btn.style.cssText='padding:4px 10px;border-radius:4px;cursor:pointer;font-family:var(--mono);font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:5px;'
+      +(isActive?'background:var(--q);color:#fff;':'background:var(--bg3);color:var(--text);border:1px solid var(--border2);');
+    btn.innerHTML=s+'<span style="font-size:8px;opacity:0.7;">'+ltp+'</span>';
+    btn.onclick=(function(sc,sec){return function(){qsGo(sc);showSectorScrips(sec);};})(s,sector);
+    list.appendChild(btn);
+  });
+  panel.style.display='block';
+}
+
+function renderSectorBreadth(){
+  var el=document.getElementById('sector-breadth');
+  var title=document.getElementById('sector-breadth-title');
+  if(!el)return;
+  el.innerHTML='';
+  var sectors=[
+    {k:'NEPSE',l:'NEPSE'},{k:'BANKING',l:'BANK'},{k:'DEVBANK',l:'DEV'},
+    {k:'FINANCE',l:'FIN'},{k:'MICROFINANCE',l:'MFI'},{k:'HYDROPOWER',l:'HYDRO'},
+    {k:'NONLIFEINSU',l:'NINSU'},{k:'LIFEINSU',l:'LINSU'},{k:'HOTELS',l:'HOTEL'},
+    {k:'TRADING',l:'TRADE'},{k:'MANUFACTURING',l:'MFG'},{k:'INVESTMENT',l:'INV'},
+    {k:'OTHERS',l:'OTH'},{k:'MUTUALFUND',l:'MF'}
+  ];
+  var html='',green=0,red=0;
+  sectors.forEach(function(s){
+    var p=presets[s.k];if(!p)return;
+    var chg=p.state.chg||'0';
+    var m=chg.match(/([+-]?[0-9.]+)%/);
+    var pct=m?parseFloat(m[1]):0;
+    var bg=pct>0?'rgba(26,184,122,0.15)':pct<0?'rgba(231,76,60,0.15)':'rgba(240,192,64,0.1)';
+    var col=pct>0?'var(--bull)':pct<0?'var(--bear)':'var(--neutral)';
+    var bdr=s.k===state.ticker?';border:1px solid '+col:'';
+    if(pct>0)green++;else if(pct<0)red++;
+    var sign=pct>0?'+':'';
+    var div=document.createElement('div');
+    div.style.cssText='text-align:center;padding:5px 3px;border-radius:4px;background:'+bg+bdr+';cursor:pointer;';
+    div.innerHTML='<div style="font-family:var(--mono);font-size:8px;color:'+col+';font-weight:700;">'+s.l+'</div>'
+      +'<div style="font-family:var(--mono);font-size:9px;color:'+col+';">'+sign+pct.toFixed(2)+'%</div>';
+    div.onclick=(function(key){return function(){
+      loadPreset(key);
+      if(sectorScripMap[key]) showSectorScrips(key);
+    };})(s.k);
+    el.appendChild(div);
+  });
+  if(title)title.textContent='Sector Breadth - '+fmtDate(presets.NEPSE.state.date)+' | Green: '+green+' Red: '+red;
+}
+function sInd(vid,vsig,vbar,val,sig,cls,fill,max,color){
+  document.getElementById(vid).textContent=val;
+  var s=document.getElementById(vsig);s.textContent=sig;s.className='ind-sig sig-'+cls;
+  var b=document.getElementById(vbar);b.style.width=Math.min(Math.max(fill/max*100,2),100)+'%';b.style.background=color;
+}
+function renderBias(){
+  var c=state.close;
+  var qMin=levels.filter(function(l){return l.tier==='Q';}).reduce(function(a,b){return Math.min(a,b.price);},Infinity);
+  var mMin=levels.filter(function(l){return l.tier==='M'&&l.type==='Res';}).reduce(function(a,b){return Math.min(a,b.price);},Infinity);
+  var lRes=levels.filter(function(l){return l.tier==='L'&&l.type==='Res';});
+  var vn=(state.vol||'').indexOf('-')>-1;
+  var bd=[
+    {lbl:'Q',col:'var(--q)',bull:c>qMin,pct:c>qMin?62:30},
+    {lbl:'M',col:'var(--m)',bull:c>mMin,pct:c>mMin?62:30},
+    {lbl:'L',col:'var(--l)',bull:lRes.length>0&&c>=lRes[0].price,pct:55},
+    {lbl:'RSI',col:'var(--muted)',bull:state.rsi>50,pct:state.rsi},
+    {lbl:'DPO',col:'var(--muted)',bull:state.dpo>0,pct:state.dpo>0?62:38},
+    {lbl:'VOL',col:'var(--muted)',bull:!vn,pct:vn?25:68}
+  ];
+  var html='';
+  bd.forEach(function(b){
+    var col=b.bull?'var(--bull)':'var(--bear)';
+    var fw=Math.abs(50-b.pct);var fl=b.bull?'50%':b.pct+'%';
+    html+='<div class="bias-row"><div class="bias-tier" style="color:'+b.col+'">'+b.lbl+'</div>'
+      +'<div class="bias-bg"><div class="bias-center"></div><div class="bias-fill" style="width:'+fw+'%;left:'+fl+';background:'+col+';"></div></div>'
+      +'<div class="bias-lbl" style="color:'+col+'">'+(b.bull?'BULL \u25b2':'BEAR \u25bc')+'</div></div>';
+  });
+  document.getElementById('bias-rows').innerHTML=html;
+  var bears=bd.filter(function(b){return !b.bull;}).length;
+  var o=document.getElementById('overall-bias');
+  if(bears>=4){o.textContent='BEARISH \u2014 WATCH SUPPORT';o.style.color='var(--bear)';}
+  else if(bears<=2){o.textContent='BULLISH \u2014 BREAKOUT WATCH';o.style.color='var(--bull)';}
+  else{o.textContent='MIXED \u2014 WAIT FOR CONFIRMATION';o.style.color='var(--neutral)';}
+}
+function renderQMLTable(){
+  var c=state.close;
+  var sorted=levels.slice().sort(function(a,b){return b.price-a.price;});
+  var html='',done=false;
+  sorted.forEach(function(lv){
+    if(!done&&lv.price<c){
+      html+='<tr class="cur-row"><td colspan="2" style="font-family:var(--mono);font-size:9px;color:var(--muted);">\u25b6 CLOSE</td><td style="font-family:var(--mono);font-size:13px;font-weight:700;color:#fff;">'+fmt(c)+'</td><td colspan="3" style="font-family:var(--mono);font-size:9px;color:var(--muted);">'+state.chg+'</td></tr>';
+      done=true;
+    }
+    var d=pct(lv.price,c),dc=lv.price>c?'above':'below',tc='tier-'+lv.tier.toLowerCase();
+    html+='<tr><td class="'+tc+'">'+lv.tier+'</td><td style="color:var(--muted);font-size:9px;">'+lv.type+'</td><td style="color:#fff;font-size:12px;">'+fmt(lv.price)+'</td><td class="'+dc+'">'+d+'%</td><td><span class="conf-badge '+lv.confClass+'">'+lv.conf+'</span></td><td style="font-size:9px;color:var(--muted);">'+lv.note+'</td></tr>';
+  });
+  if(!done) html+='<tr class="cur-row"><td colspan="2" style="font-family:var(--mono);font-size:9px;color:var(--muted);">\u25b6 CLOSE</td><td style="font-size:13px;font-weight:700;color:#fff;">'+fmt(c)+'</td><td colspan="3" style="font-size:9px;color:var(--muted);">'+state.chg+'</td></tr>';
+  document.getElementById('qml-tbody').innerHTML=html;
+}
+function renderPriceMap(){
+  var all=levels.map(function(l){return l.price;}).concat([state.close]);
+  var rMin=Math.min.apply(null,all)*0.97,rMax=Math.max.apply(null,all)*1.02,span=rMax-rMin;
+  if(!span)return;
+  document.getElementById('pmap-range').textContent='Range: '+fmt(rMin)+' \u2013 '+fmt(rMax);
+  function tp(p){return((rMax-p)/span*100).toFixed(2)+'%';}
+  var html='';
+  var qp=levels.filter(function(l){return l.tier==='Q';}).map(function(l){return l.price;});
+  if(qp.length>=2){var qx=Math.max.apply(null,qp),qn=Math.min.apply(null,qp);html+='<div class="czone" style="top:'+((rMax-qx)/span*100).toFixed(2)+'%;height:'+((qx-qn)/span*100).toFixed(2)+'%;background:rgba(124,106,240,0.1);border:1px dashed rgba(124,106,240,0.25);"></div>';}
+  var mp=levels.filter(function(l){return l.tier==='M';}).map(function(l){return l.price;});
+  if(mp.length>=2){var mx=Math.max.apply(null,mp),mn=Math.min.apply(null,mp);html+='<div class="czone" style="top:'+((rMax-mx)/span*100).toFixed(2)+'%;height:'+((mx-mn)/span*100).toFixed(2)+'%;background:rgba(26,184,122,0.08);border:1px dashed rgba(26,184,122,0.2);"></div>';}
+  var lp=levels.filter(function(l){return l.tier==='L';}).map(function(l){return l.price;});
+  if(lp.length>=2){var lx=Math.max.apply(null,lp),ln=Math.min.apply(null,lp);html+='<div class="czone" style="top:'+((rMax-lx)/span*100).toFixed(2)+'%;height:'+Math.max((lx-ln)/span*100,1.5).toFixed(2)+'%;background:rgba(232,160,48,0.1);border:1px dashed rgba(232,160,48,0.25);"></div>';}
+  levels.slice().sort(function(a,b){return b.price-a.price;}).forEach(function(lv){
+    var col=lv.tier==='Q'?'var(--q)':lv.tier==='M'?'var(--m)':'var(--l)';
+    var op=lv.tier==='Q'?0.7:lv.tier==='M'?0.55:0.5;
+    html+='<div class="bar-level" style="top:'+tp(lv.price)+'"><div class="bar-tag" style="color:'+col+';font-size:8px;">'+lv.tier+'</div><div class="bar-line" style="background:'+col+';opacity:'+op+';"></div><div class="bar-price" style="color:'+col+';">'+fmt(lv.price)+'</div></div>';
+  });
+  var ct=((rMax-state.close)/span*100).toFixed(2);
+  html+='<div class="cur-marker" style="top:'+ct+'%;"></div><div class="cur-tag" style="top:'+ct+'%;">'+fmt(state.close)+'</div>';
+  document.getElementById('pricebar').innerHTML=html;
+}
+// ==============================
+// SIGNAL ENGINE HELPERS
+// ==============================
+function autoCalcPivot(){
+  // Recalculate pivot when close changes
+  var c=parseFloat(document.getElementById('se-close').value)||state.close;
+  var h=state.high||c;
+  var l=state.low||c;
+  var pivot=parseFloat(((h+l+c)/3).toFixed(2));
+  var spiv=document.getElementById('se-pivot');
+  if(spiv) spiv.value=pivot;
+  var hint=document.getElementById('se-pivot-hint');
+  if(hint){
+    var above=c>pivot;
+    hint.textContent=(above?'ABOVE PIVOT '+pivot+' - Bullish':'BELOW PIVOT '+pivot+' - Bearish');
+    hint.style.color=above?'var(--bull)':'var(--bear)';
+  }
+}
+
+function autoDPODir(){
+  var dpo=parseFloat(document.getElementById('se-dpo').value)||0;
+  setDPODir(dpo>0?'positive':'negative');
+}
+
+function setDPODir(dir){
+  document.getElementById('se-dpo-dir').value=dir==='positive'?'rising':'falling';
+  var pos=document.getElementById('dpo-pos-btn');
+  var neg=document.getElementById('dpo-neg-btn');
+  var hint=document.getElementById('se-dpo-hint');
+  if(dir==='positive'){
+    pos.style.background='rgba(26,184,122,0.2)';pos.style.color='var(--bull)';pos.style.borderColor='var(--bull)';
+    neg.style.background='var(--bg3)';neg.style.color='var(--muted)';neg.style.borderColor='var(--border2)';
+    if(hint){hint.textContent='DPO > 0 - Cycle Strong - Layer 2 PASS';hint.style.color='var(--bull)';}
+  } else {
+    neg.style.background='rgba(231,76,60,0.15)';neg.style.color='var(--bear)';neg.style.borderColor='var(--bear)';
+    pos.style.background='var(--bg3)';pos.style.color='var(--muted)';pos.style.borderColor='var(--border2)';
+    if(hint){hint.textContent='DPO < 0 - Cycle Weak - Layer 2 FAIL';hint.style.color='var(--bear)';}
+  }
+}
+
+// CSV PERSISTENCE - save EOD data across refresh
+function saveEODToStorage(){
+  if(!eodData||!eodData.length) return;
+  try{
+    localStorage.setItem('twv_eod_data',JSON.stringify(eodData));
+    localStorage.setItem('twv_eod_date',new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}));
+    localStorage.setItem('twv_eod_count',eodData.length);
+  }catch(e){}
+}
+
+function loadEODFromStorage(){
+  try{
+    var s=localStorage.getItem('twv_eod_data');
+    var d=localStorage.getItem('twv_eod_date');
+    var c=localStorage.getItem('twv_eod_count');
+    if(s){
+      eodData=JSON.parse(s);
+      buildSearchIndex();
+      if(d) console.log('EOD restored: '+c+' scrips from '+d);
+    }
+  }catch(e){}
+}
+
+// ==============================
+// SIGNAL ENGINE
+// ==============================
+function setLayer(n,pass,warn,label){var dot=document.getElementById('dot-'+n),chk=document.getElementById('chk-'+n);var cls=pass?'pass':warn?'warn':'fail';dot.className='check-dot '+cls;chk.className='check-val '+cls;chk.textContent=label;}
+function calcSignal(){
+  var close=parseFloat(document.getElementById('se-close').value)||0;
+  var pivot=parseFloat(document.getElementById('se-pivot').value)||0;
+  var rsi=parseFloat(document.getElementById('se-rsi').value)||50;
+  var dpo=parseFloat(document.getElementById('se-dpo').value)||0;
+  var dpoDir=document.getElementById('se-dpo-dir').value;
+  var volPos=document.getElementById('se-vol-pos').value;
+  var volStreak=parseInt(document.getElementById('se-vol-streak').value)||0;
+  var qmlPos=document.getElementById('se-qml-pos').value;
+  var score=0,bullCount=0,bearCount=0;
+  var l1p=false,l1w=false,l1l='';
+  if(close>0&&pivot>0){if(close>pivot){l1p=true;l1l='Above Pivot \u2014 Bullish';bullCount++;}else if(rsi<50){l1l='Below Pivot+RSI<50 \u2014 Downtrend';bearCount++;}else{l1w=true;l1l='Below Pivot neutral \u2014 Wait';}}else{l1w=true;l1l='Enter close and pivot';}
+  if(l1p)score++;setLayer(1,l1p,l1w,l1l);
+  var l2p=false,l2w=false,l2l='';
+  if(dpo>0&&dpoDir==='rising'){l2p=true;l2l='DPO+ Rising \u2014 Cycle Strong';bullCount++;}else if(dpo>0&&dpoDir==='flat'){l2w=true;l2l='DPO+ Flat \u2014 Weakening';}else if(dpo<0){l2l='DPO Below Zero \u2014 Weak';bearCount++;}else{l2w=true;l2l='Enter DPO';}
+  if(l2p)score++;setLayer(2,l2p,l2w,l2l);
+  var l3p=false,l3w=false,l3l='';
+  if(volPos==='support'&&volStreak>=1){l3p=true;l3l='7M+ at Support \u2014 Accumulation';bullCount++;}else if(volPos==='top'){l3l='7B+ at Top \u2014 Distribution';bearCount++;}else if(volPos==='support'&&volStreak===0){l3w=true;l3l='Volume Dry \u2014 Watch';}else if(volStreak>=5){l3p=true;l3l='5-Candle Streak \u2014 Breakout!';bullCount++;}else{l3w=true;l3l='Mid range \u2014 No signal';}
+  if(l3p)score++;setLayer(3,l3p,l3w,l3l);
+  var l4p=false,l4w=false,l4l='';
+  if(qmlPos==='above-all'||qmlPos==='above-m'){l4p=true;l4l='Above M \u2014 Bullish';bullCount++;}else if(qmlPos==='at-support'){l4p=true;l4l='At Q/M Support \u2014 Reversal zone';bullCount++;}else if(qmlPos==='above-l'){l4w=true;l4l='Above L only \u2014 Needs M break';}else if(qmlPos==='below-all'){l4l='Below All \u2014 Bearish';bearCount++;}else{l4w=true;l4l='Select QML position';}
+  if(l4p)score++;setLayer(4,l4p,l4w,l4l);
+  var main=document.getElementById('se-main'),sub=document.getElementById('se-sub'),sc=document.getElementById('se-score'),cf=document.getElementById('se-conf-fill');
+  sc.textContent=score+' / 4 layers confirmed';cf.style.width=Math.round(score/4*100)+'%';
+  if(score===4&&bullCount>=3){main.textContent='LONG';main.className='sig-main long';sub.textContent='All 4 layers \u2014 High conviction';cf.style.background='var(--bull)';sc.style.color='var(--bull)';}
+  else if(bearCount>=3){main.textContent='SHORT';main.className='sig-main short';sub.textContent='Bearish across layers';cf.style.background='var(--bear)';sc.style.color='var(--bear)';}
+  else if(score>=3){main.textContent='LONG';main.className='sig-main long';sub.textContent='3 layers \u2014 Manage size';cf.style.background='var(--bull)';sc.style.color='var(--bull)';}
+  else{main.textContent='WAIT';main.className='sig-main wait';sub.textContent='Not enough confirmation';cf.style.background='var(--neutral)';sc.style.color='var(--neutral)';}
+  toast('Signal: '+main.textContent);
+}
+
+// ==============================
+// JOURNAL
+// ==============================
+var jRules={1:null,2:null,3:null,4:null};var trades=[];
+function setRule(n,val){
+  jRules[n]=val;
+  document.getElementById('jrb-'+n+'y').className='jnl-rule-btn'+(val==='yes'?' active-yes':'');
+  document.getElementById('jrb-'+n+'n').className='jnl-rule-btn'+(val==='no'?' active-no':'');
+  document.getElementById('jr-'+n).className='jnl-rule'+(val==='yes'?' yes':val==='no'?' no':'');
+  var ans=Object.values(jRules).filter(function(r){return r!==null;}).length;
+  if(ans<4){document.getElementById('jnl-verdict').textContent='\u9672 Answer all 4 rules';document.getElementById('jnl-verdict').className='jnl-verdict partial';return;}
+  var yes=Object.values(jRules).filter(function(r){return r==='yes';}).length;
+  var broken=[],rn=['Close>Pivot','DPO>0','Volume 7M+','QML level'];
+  Object.keys(jRules).forEach(function(k){if(jRules[k]==='no')broken.push('R'+k+':'+rn[k-1]);});
+  var v=document.getElementById('jnl-verdict');
+  if(yes===4){v.textContent='\u2705 SYSTEM TRADE \u2014 All 4 rules';v.className='jnl-verdict system';}
+  else if(yes>=2){v.textContent='\u26a0 PARTIAL \u2014 '+broken.join(' | ');v.className='jnl-verdict partial';}
+  else{v.textContent='\u274c RULE BREAK \u2014 '+broken.join(' | ');v.className='jnl-verdict broken';}
+}
+function calcPosition(){
+  var cap=parseFloat(document.getElementById('pc-capital').value)||0;
+  var rp=parseFloat(document.getElementById('pc-risk').value)||0;
+  var entry=parseFloat(document.getElementById('pc-entry').value)||0;
+  var sl=parseFloat(document.getElementById('pc-sl').value)||0;
+  var target=parseFloat(document.getElementById('pc-target').value)||0;
+  if(!cap||!rp||!entry||!sl)return;
+  var riskAmt=cap*(rp/100),riskPerUnit=Math.abs(entry-sl);
+  var units=riskPerUnit>0?Math.floor(riskAmt/riskPerUnit):0;
+  var reward=target>0?Math.abs(target-entry):0;
+  var rr=riskPerUnit>0?(reward/riskPerUnit).toFixed(2):'--';
+  document.getElementById('pc-riskamt').textContent='Rs '+fmt(riskAmt);
+  document.getElementById('pc-units').textContent=units.toLocaleString();
+  document.getElementById('pc-rratio').textContent='1:'+rr;
+  document.getElementById('pc-capused').textContent='Rs '+fmt(units*entry);
+}
+function addTrade(){
+  var entry=parseFloat(document.getElementById('jf-entry').value)||0;
+  var vol=parseFloat(document.getElementById('jf-vol').value)||0;
+  if(!entry||!vol){toast('\u26a0 Entry price and units required');return;}
+  var exit=parseFloat(document.getElementById('jf-exit').value)||0;
+  var sl=parseFloat(document.getElementById('jf-sl').value)||0;
+  var dir=document.getElementById('jf-dir').value;
+  // Use active scrip name - ensure correct name saved
+  var jfSec=document.getElementById('jf-sector');
+  if(jfSec&&jfSec.value) activeScrip=jfSec.value;
+  var pnl=exit>0?(dir==='LONG'?(exit-entry)*vol:(entry-exit)*vol):0;
+  var risk=Math.abs(entry-sl),reward=exit>0?Math.abs(exit-entry):0;
+  var rr=risk>0?(reward/risk).toFixed(2):'--';
+  var yes=Object.values(jRules).filter(function(r){return r==='yes';}).length;
+  var ans=Object.values(jRules).filter(function(r){return r!==null;}).length;
+  var sys=ans===4?(yes===4?'System':yes>=2?'Partial':'Broken'):'--';
+  var tradeScrip=document.getElementById('jf-sector').value||activeScrip||state.ticker;
+  trades.push({id:Date.now(),date:document.getElementById('jf-date').value,sector:tradeScrip,dir:dir,entry:entry,exit:exit||0,sl:sl||0,vol:vol,pnl:pnl,rr:rr,system:sys,status:document.getElementById('jf-status').value,notes:document.getElementById('jf-notes').value,rules:{1:jRules[1],2:jRules[2],3:jRules[3],4:jRules[4]}});
+  saveJournalData();renderJournal();resetTradeForm();toast('\u2713 Trade added');
+}
+function resetTradeForm(){
+  ['jf-entry','jf-exit','jf-sl','jf-vol','jf-notes'].forEach(function(id){document.getElementById(id).value='';});
+  jRules={1:null,2:null,3:null,4:null};
+  [1,2,3,4].forEach(function(n){document.getElementById('jrb-'+n+'y').className='jnl-rule-btn';document.getElementById('jrb-'+n+'n').className='jnl-rule-btn';document.getElementById('jr-'+n).className='jnl-rule';});
+  document.getElementById('jnl-verdict').textContent='\u9672 Answer all 4 rules to get verdict';
+  document.getElementById('jnl-verdict').className='jnl-verdict partial';
+  setTodayDate();
+}
+function deleteTrade(id){trades=trades.filter(function(t){return t.id!==id;});saveJournalData();renderJournal();toast('Trade removed');}
+function saveJournalData(){try{localStorage.setItem('twv_journal',JSON.stringify(trades));}catch(e){}}
+function loadJournal(){try{var s=localStorage.getItem('twv_journal');if(s)trades=JSON.parse(s);}catch(e){}renderJournal();}
+function renderJournal(){
+  var tbody=document.getElementById('jnl-tbody');if(!tbody)return;
+  if(!trades.length){tbody.innerHTML='<tr><td colspan="13" style="text-align:center;color:var(--muted);font-family:var(--mono);font-size:10px;padding:18px;">No trades yet \u2014 add your first trade above</td></tr>';updateJournalStats();return;}
+  var html='';
+  trades.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);}).forEach(function(t,i){
+    var pc=t.pnl>0?'pnl-pos':t.pnl<0?'pnl-neg':'';
+    var dc=t.dir==='LONG'?'trade-long':'trade-short';
+    var sc=t.system==='System'?'sys-yes':t.system==='Partial'?'sys-partial':'sys-no';
+    var stc=t.status==='open'?'var(--neutral)':t.status==='closed'?'var(--bull)':'var(--bear)';
+    html+='<tr><td style="color:var(--muted);">'+(i+1)+'</td><td>'+t.date+'</td><td style="color:#fff;font-weight:600;">'+t.sector+'</td><td class="'+dc+'"><b>'+t.dir+'</b></td><td>'+fmt(t.entry)+'</td><td>'+(t.exit?fmt(t.exit):'--')+'</td><td style="color:var(--bear);">'+(t.sl?fmt(t.sl):'--')+'</td><td>'+t.vol.toLocaleString()+'</td><td class="'+pc+'">'+(t.exit?(t.pnl>=0?'+':'')+fmt(t.pnl):'open')+'</td><td style="color:var(--q);">'+t.rr+'</td><td><span class="sys-badge '+sc+'">'+t.system+'</span></td><td style="color:'+stc+';font-size:9px;">'+t.status.toUpperCase()+'</td><td><button class="btn-del-trade" onclick="deleteTrade('+t.id+')">&#10005;</button></td></tr>';
+  });
+  document.getElementById('jnl-tbody').innerHTML=html;updateJournalStats();
+}
+function updateJournalStats(){
+  var total=trades.length,closed=trades.filter(function(t){return t.status==='closed'&&t.exit>0;});
+  var wins=closed.filter(function(t){return t.pnl>0;}).length;
+  var wr=closed.length>0?Math.round(wins/closed.length*100):0;
+  var tpnl=closed.reduce(function(a,t){return a+t.pnl;},0);
+  var sys=trades.filter(function(t){return t.system==='System';}).length;
+  var sp=total>0?Math.round(sys/total*100):0;
+  var rrv=closed.filter(function(t){return t.rr!=='--';}).map(function(t){return parseFloat(t.rr)||0;});
+  var arr=rrv.length>0?(rrv.reduce(function(a,b){return a+b;},0)/rrv.length).toFixed(2):0;
+  document.getElementById('js-total').textContent=total;
+  var we=document.getElementById('js-winrate');we.textContent=wr+'%';we.className='jnl-stat-val '+(wr>=60?'bull':wr>=40?'neut':'bear');
+  var pe=document.getElementById('js-pnl');pe.textContent=(tpnl>=0?'+':'')+fmt(tpnl);pe.className='jnl-stat-val '+(tpnl>=0?'bull':'bear');
+  document.getElementById('js-systrades').textContent=sp+'%';
+  document.getElementById('js-rr').textContent=arr;
+}
+function clearJournal(){if(!confirm('Clear ALL trades?'))return;trades=[];saveJournalData();renderJournal();toast('Journal cleared');}
+function exportJournalCSV(){
+  if(!trades.length){toast('No trades');return;}
+  var rows=[['TRADE WITH VIBES Journal'],['Date','Scrip','Dir','Entry','Exit','SL','Units','P&L','R:R','System','Status','Notes']];
+  trades.forEach(function(t){rows.push([t.date,t.sector,t.dir,t.entry,t.exit||'',t.sl||'',t.vol,t.exit?t.pnl.toFixed(2):'open',t.rr,t.system,t.status,t.notes]);});
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+(c+'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='TWV_Journal_'+new Date().toISOString().split('T')[0]+'.csv';a.click();toast('\u2713 CSV exported');
+}
+function exportJournalXLSX(){
+  if(typeof XLSX==='undefined'){toast('SheetJS not loaded');return;}
+  var wb=XLSX.utils.book_new();
+  var data=[['Date','Scrip','Dir','Entry','Exit','SL','Units','P&L','R:R','System','Status','Notes']];
+  trades.forEach(function(t){data.push([t.date,t.sector,t.dir,t.entry,t.exit||0,t.sl||0,t.vol,t.exit?parseFloat(t.pnl.toFixed(2)):0,t.rr,t.system,t.status,t.notes]);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'Journal');
+  XLSX.writeFile(wb,'TWV_Journal_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  toast('\u2713 Excel exported');
+}
+
+// ==============================
+// LEVEL MANAGER
+// ==============================
+function autoFillLevels(scrip, close, w52h, w52l){
+  if(!w52h||!w52l||!close) return;
+  var span = w52h - w52l;
+  var mLvl = (w52h + w52l) / 2;
+  var lLvl = w52l + (span * 0.382);
+  var l786 = w52l + (span * 0.786);
+  // Build auto QML levels from 52W data
+  levels = [
+    {tier:'Q',type:'Res',price:parseFloat(w52h.toFixed(2)),conf:'52W HIGH',confClass:'conf-hi',note:'Q ceiling - 52W High'},
+    {tier:'M',type:'Res',price:parseFloat((w52l + span*0.786).toFixed(2)),conf:'M+786',confClass:'conf-md',note:'78.6% retracement'},
+    {tier:'M',type:'Res',price:parseFloat(mLvl.toFixed(2)),conf:'M+50%',confClass:'conf-md',note:'50% midpoint - M level'},
+    {tier:'L',type:'Res',price:parseFloat(l786.toFixed(2)),conf:'L+618',confClass:'conf-lo',note:'61.8% Fibonacci'},
+    {tier:'L',type:'Sup',price:parseFloat(lLvl.toFixed(2)),conf:'L+382',confClass:'conf-lo',note:'38.2% Fibonacci - L support'},
+    {tier:'Q',type:'Sup',price:parseFloat(w52l.toFixed(2)),conf:'52W LOW',confClass:'conf-hi',note:'Q floor - 52W Low'}
+  ];
+  // Update state
+  state.w52h = w52h;
+  state.w52l = w52l;
+  state.entryLo = parseFloat((close * 0.995).toFixed(2));
+  state.entryHi = parseFloat(close.toFixed(2));
+  state.sl = parseFloat(w52l.toFixed(2));
+  state.t1lo = parseFloat(mLvl.toFixed(2));
+  state.t1hi = parseFloat((w52l + span*0.618).toFixed(2));
+  state.t2lo = parseFloat((w52l + span*0.786).toFixed(2));
+  state.t2hi = parseFloat(w52h.toFixed(2));
+  // Update planner fields
+  var fp52h = document.getElementById('fp-52wh');
+  var fp52l = document.getElementById('fp-52wl');
+  var fpcur = document.getElementById('fp-cur');
+  if(fp52h) fp52h.value = w52h;
+  if(fp52l) fp52l.value = w52l;
+  if(fpcur) fpcur.value = close;
+  updateRangeBar();
+  autoSave();
+  toast('✓ '+scrip+' levels auto-filled from 52W data');
+}
+
+function renderLevelEditor(){
+  var html='';
+  levels.forEach(function(lv,i){
+    html+='<tr id="lvrow-'+i+'"><td style="color:var(--muted);font-family:var(--mono);font-size:9px;padding:4px 7px;">'+(i+1)+'</td>'
+      +'<td><select class="lv-tier" style="width:50px;"><option'+(lv.tier==='Q'?' selected':'')+'>Q</option><option'+(lv.tier==='M'?' selected':'')+'>M</option><option'+(lv.tier==='L'?' selected':'')+'>L</option></select></td>'
+      +'<td><select class="lv-type" style="width:50px;"><option'+(lv.type==='Res'?' selected':'')+'>Res</option><option'+(lv.type==='Sup'?' selected':'')+'>Sup</option></select></td>'
+      +'<td><input class="lv-price" type="number" step="0.01" value="'+lv.price+'" style="width:88px;"></td>'
+      +'<td><input class="lv-conf" value="'+lv.conf+'" style="width:85px;"></td>'
+      +'<td><select class="lv-cls" style="width:74px;"><option value="conf-hi"'+(lv.confClass==='conf-hi'?' selected':'')+'>Q</option><option value="conf-md"'+(lv.confClass==='conf-md'?' selected':'')+'>M</option><option value="conf-lo"'+(lv.confClass==='conf-lo'?' selected':'')+'>L</option></select></td>'
+      +'<td><input class="lv-note" value="'+lv.note+'" style="width:170px;"></td>'
+      +'<td><button class="btn-del" onclick="deleteLevel('+i+')">&#10005;</button></td></tr>';
+  });
+  document.getElementById('lvl-tbody').innerHTML=html;
+}
+function collectLevelEdits(){
+  var rows=document.querySelectorAll('[id^="lvrow-"]');if(!rows.length)return;
+  var nl=[];
+  rows.forEach(function(row){
+    var pr=parseFloat(row.querySelector('.lv-price').value)||0;if(!pr)return;
+    nl.push({tier:row.querySelector('.lv-tier').value,type:row.querySelector('.lv-type').value,price:pr,conf:row.querySelector('.lv-conf').value,confClass:row.querySelector('.lv-cls').value,note:row.querySelector('.lv-note').value});
+  });
+  if(nl.length>0)levels=nl;
+}
+function addLevel(){collectLevelEdits();levels.push({tier:'L',type:'Res',price:state.close,conf:'L',confClass:'conf-lo',note:'New level'});renderLevelEditor();toast('+ Level added');}
+function deleteLevel(i){collectLevelEdits();levels.splice(i,1);renderLevelEditor();toast('Level removed');}
+
+// ==============================
+// PLANNER
+// ==============================
+var plans=[];
+function updateRangeBar(){
+  var cur=parseFloat(document.getElementById('fp-cur').value)||0;
+  var hi=parseFloat(document.getElementById('fp-52wh').value)||0;
+  var lo=parseFloat(document.getElementById('fp-52wl').value)||0;
+  if(!cur||!hi||!lo)return;
+  var span=hi-lo,pos=((cur-lo)/span*100);
+  var mk=document.getElementById('fp-cur-marker');
+  mk.style.left=Math.min(Math.max(pos,2),98)+'%';mk.style.display='block';
+  document.getElementById('fp-high-label').textContent='52W High: '+fmt(hi);
+  document.getElementById('fp-low-label').textContent='52W Low: '+fmt(lo);
+  var col=pos>60?'var(--bull)':pos>40?'var(--neutral)':'var(--bear)';
+  document.getElementById('fp-range-pct').innerHTML='<span style="color:'+col+'">'+pos.toFixed(1)+'% above Low | '+(100-pos).toFixed(1)+'% below High</span>';
+  document.getElementById('fp-qlvl').textContent=fmt(hi);document.getElementById('fp-qdist').textContent=pct(hi,cur)+'% away';document.getElementById('fp-qdist').style.color=hi>cur?'var(--bull)':'var(--bear)';
+  var mLvl=(hi+lo)/2;document.getElementById('fp-mlvl').textContent=fmt(mLvl);document.getElementById('fp-mdist').textContent=pct(mLvl,cur)+'% away';document.getElementById('fp-mdist').style.color=mLvl>cur?'var(--bull)':'var(--bear)';
+  var lLvl=lo+span*0.382;document.getElementById('fp-llvl').textContent=fmt(lLvl);document.getElementById('fp-ldist').textContent=pct(lLvl,cur)+'% away';document.getElementById('fp-ldist').style.color=lLvl>cur?'var(--bull)':'var(--bear)';
+}
+function calcGannCycles(){
+  var sw=document.getElementById('fp-swdate').value;if(!sw)return;
+  var swD=new Date(sw),today=new Date();
+  var html='';
+  [45,90,180,360].forEach(function(days){
+    var t=new Date(swD.getTime()+days*86400000);
+    var diff=Math.round((t-today)/86400000);
+    var near=Math.abs(diff)<=7;
+    var col=near?'var(--q)':diff<0?'var(--muted)':'var(--text)';
+    var dt=diff<0?Math.abs(diff)+'d ago':diff===0?'TODAY!':diff+'d ahead';
+    var cls=near?'gann-box active':'gann-box';
+    html+='<div class="'+cls+'">'
+      +'<div class="gann-days">'+days+' days</div>'
+      +'<div class="gann-date" style="color:'+col+';">'+t.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+'</div>'
+      +'<div class="gann-dist" style="color:'+(near?'var(--q)':'var(--muted)')+';">'+dt+(near?' !':'')+'</div>'
+      +'</div>';
+  });
+  document.getElementById('fp-gann-cycles').innerHTML=html;
+}
+function calcPlan(){
+  var scrip=document.getElementById('fp-scrip').value;
+  var cur=parseFloat(document.getElementById('fp-cur').value)||0;
+  var hi=parseFloat(document.getElementById('fp-52wh').value)||0;
+  var lo=parseFloat(document.getElementById('fp-52wl').value)||0;
+  if(!cur||!hi||!lo){toast('\u26a0 Enter Current, 52W High and Low');return;}
+  var span=hi-lo,mLvl=(hi+lo)/2,lLvl=lo+span*0.382,pos=((cur-lo)/span*100);
+  var bull=pos>50,bias=pos>60?'BULLISH \u25b2':pos>40?'NEUTRAL \u2015':'BEARISH \u25bc';
+  var bc=pos>60?'bull':pos>40?'neut':'bear';
+  var entry=bull?cur*0.995:cur*1.005,sl=bull?lo+span*0.236:hi-span*0.236,t1=mLvl,t2=hi*0.95;
+  var rr=((t1-entry)/(entry-sl)).toFixed(2);
+  function sp(sfx,bv,wv,ev,sv,t1v,t2v,rrv){
+    document.getElementById('pp-'+sfx+'-bias').textContent=bv;document.getElementById('pp-'+sfx+'-bias').className='plan-val '+bc;
+    document.getElementById('pp-'+sfx+'-watch').textContent=wv;
+    document.getElementById('pp-'+sfx+'-entry').textContent=ev;
+    document.getElementById('pp-'+sfx+'-sl').textContent=sv;
+    if(document.getElementById('pp-'+sfx+'-tgt'))document.getElementById('pp-'+sfx+'-tgt').textContent=t1v;
+    if(document.getElementById('pp-'+sfx+'-t1'))document.getElementById('pp-'+sfx+'-t1').textContent=t1v;
+    if(document.getElementById('pp-'+sfx+'-t2'))document.getElementById('pp-'+sfx+'-t2').textContent=t2v;
+    document.getElementById('pp-'+sfx+'-rr').textContent='1:'+rrv;
+  }
+  sp('d',bias,fmt(lLvl)+' L',fmt(entry),fmt(sl),fmt(t1),'--',rr);
+  sp('w',bias,fmt(mLvl)+' M',fmt(entry),fmt(sl),fmt(t1),fmt(t2),rr);
+  sp('m',bias,fmt(hi)+' Q',fmt(entry),fmt(lo),fmt(t1),fmt(hi),((hi-entry)/(entry-lo)).toFixed(2));
+  calcGannCycles();updateRangeBar();
+  document.getElementById('fp-plan-cards').style.display='block';
+  toast('\u2713 Plan calculated for '+scrip);
+}
+function savePlan(){
+  var scrip=document.getElementById('fp-scrip').value;
+  var cur=parseFloat(document.getElementById('fp-cur').value)||0;
+  var hi=parseFloat(document.getElementById('fp-52wh').value)||0;
+  var lo=parseFloat(document.getElementById('fp-52wl').value)||0;
+  if(!cur){toast('\u26a0 Calculate plan first');return;}
+  var span=hi-lo,pos=((cur-lo)/span*100);
+  var mLvl=(hi+lo)/2,entry=pos>50?cur*0.995:cur*1.005,sl=pos>50?lo+span*0.236:hi-span*0.236;
+  var rr=((mLvl-entry)/(entry-sl)).toFixed(2);
+  plans.push({id:Date.now(),date:new Date().toISOString().split('T')[0],scrip:scrip,bias:pos>60?'BULLISH':pos>40?'NEUTRAL':'BEARISH',cur:cur,entry:entry.toFixed(2),sl:sl.toFixed(2),t1:mLvl.toFixed(2),t2:(hi*0.95).toFixed(2),rr:rr,rangePct:pos.toFixed(1)+'%'});
+  savePlansData();renderPlansTable();toast('\u2713 Plan saved \u2014 '+scrip);
+}
+function deletePlan(id){plans=plans.filter(function(p){return p.id!==id;});savePlansData();renderPlansTable();toast('Plan removed');}
+function savePlansData(){try{localStorage.setItem('twv_plans',JSON.stringify(plans));}catch(e){}}
+function loadPlans(){try{var s=localStorage.getItem('twv_plans');if(s)plans=JSON.parse(s);}catch(e){}}
+function renderPlansTable(){
+  var tbody=document.getElementById('plans-tbody');if(!tbody)return;
+  if(!plans.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--muted);font-family:var(--mono);font-size:10px;padding:16px;">No plans saved</td></tr>';return;}
+  var html='';
+  plans.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);}).forEach(function(p,i){
+    var bc=p.bias==='BULLISH'?'bull':p.bias==='BEARISH'?'bear':'neut';
+    html+='<tr><td style="color:var(--muted);">'+(i+1)+'</td><td style="color:#fff;font-weight:600;">'+p.scrip+'</td><td style="color:var(--m);">W</td><td class="'+bc+'"><b>'+p.bias+'</b></td><td style="color:var(--bull);">'+p.entry+'</td><td style="color:var(--bear);">'+p.sl+'</td><td style="color:var(--m);">'+p.t1+'</td><td style="color:var(--q);">'+p.t2+'</td><td style="color:var(--q);">1:'+p.rr+'</td><td style="color:var(--muted);">'+p.rangePct+'</td><td><button class="btn-del-trade" onclick="deletePlan('+p.id+')">&#10005;</button></td></tr>';
+  });
+  tbody.innerHTML=html;
+}
+function clearPlans(){if(!confirm('Clear ALL plans?'))return;plans=[];savePlansData();renderPlansTable();toast('Plans cleared');}
+function exportPlansCSV(){
+  if(!plans.length){toast('No plans');return;}
+  var rows=[['TWV Plans'],['Date','Scrip','Bias','Entry','SL','T1','T2','R:R','52W%']];
+  plans.forEach(function(p){rows.push([p.date,p.scrip,p.bias,p.entry,p.sl,p.t1,p.t2,p.rr,p.rangePct]);});
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+(c+'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='TWV_Plans.csv';a.click();toast('\u2713 Plans exported');
+}
+// ==============================
+// EOD IMPORT
+// ==============================
+var eodData=[],rawCSVRows=[],holidayOn=false;
+function initEOD(){
+  var li=localStorage.getItem('twv_eod_date')||'Never';
+  var cnt=parseInt(localStorage.getItem('twv_eod_count')||'0');
+  document.getElementById('eod-last-import').textContent=li;
+  document.getElementById('eod-scrips-count').textContent=cnt;
+  var day=new Date().getDay();
+  var open=[1,2,3,4,5].indexOf(day)>-1;
+  var dn=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var el=document.getElementById('eod-market-day');
+  el.textContent=dn[day]+(open?' \u2014 Market Day \u2705':' \u2014 Closed \u274c');
+  el.className='eod-status-val '+(open?'bull':'bear');
+  try{var s=localStorage.getItem('twv_eod_data');if(s){eodData=JSON.parse(s);if(eodData.length)renderEODTable();}}catch(e){}
+}
+function toggleHoliday(){
+  holidayOn=!holidayOn;
+  var kn=document.getElementById('toggle-knob'),btn=document.getElementById('toggle-btn');
+  kn.style.transform=holidayOn?'translateX(22px)':'translateX(0)';
+  kn.style.background=holidayOn?'var(--bear)':'var(--muted)';
+  btn.style.borderColor=holidayOn?'var(--bear)':'var(--border2)';
+  var el=document.getElementById('eod-session-status');
+  el.textContent=holidayOn?'Public Holiday \u2014 No import needed':'Ready for import';
+  el.className='eod-status-val '+(holidayOn?'bear':'bull');
+  toast(holidayOn?'Holiday mode ON':'Holiday mode OFF');
+}
+function handleDrop(e){e.preventDefault();document.getElementById('eod-drop-zone').classList.remove('dragover');var f=e.dataTransfer.files[0];if(f)readCSVFile(f);}
+function handleFileInput(inp){var f=inp.files[0];if(f)readCSVFile(f);}
+function readCSVFile(file){
+  if(!file.name.match(/\.csv$/i)){toast('\u26a0 Please upload a CSV file');return;}
+  var r=new FileReader();r.onload=function(e){parseCSV(e.target.result);};r.readAsText(file);
+}
+function parseCSV(text){
+  function parseLine(line,sep){
+    if(sep!==',')return line.split(sep).map(function(c){return c.replace(/^"|"$/g,'').trim();});
+    var res=[],cur='',inQ=false;
+    for(var i=0;i<line.length;i++){var ch=line[i];if(ch==='"'){inQ=!inQ;}else if(ch===','&&!inQ){res.push(cur.trim());cur='';}else{cur+=ch;}}
+    res.push(cur.trim());return res;
+  }
+  var lines=text.split('\n').filter(function(l){return l.trim();});
+  if(lines.length<2){toast('\u26a0 CSV empty');return;}
+  var sep=',';
+  if(lines[0].indexOf('\t')>-1)sep='\t';
+  else if((lines[0].match(/;/g)||[]).length>(lines[0].match(/,/g)||[]).length)sep=';';
+  rawCSVRows=lines.map(function(l){return parseLine(l,sep);});
+  var fr=rawCSVRows[0];
+  var c3=fr[3]?fr[3].trim().toUpperCase():'',c2=fr[2]?fr[2].trim().toUpperCase():'';
+  var hasHdr=c3==='SYMBOL'||c3==='SCRIP'||c2==='S.NO'||c2==='S.N'||c2==='NO'||isNaN(parseFloat(fr[4]));
+  if(hasHdr)rawCSVRows=rawCSVRows.slice(1);
+  console.log('CSV: '+rawCSVRows.length+' rows, sep='+JSON.stringify(sep)+', first:',rawCSVRows[0]);
+  var dz=document.getElementById('eod-drop-zone');
+  dz.style.borderColor='var(--m)';dz.style.background='rgba(26,184,122,0.05)';
+  dz.innerHTML='<div class="eod-drop-icon">\u2705</div><div class="eod-drop-text"><b style="color:#fff;">'+rawCSVRows.length+' rows loaded</b><br>Click Import EOD Data</div>';
+  toast('\u2713 CSV loaded \u2014 '+rawCSVRows.length+' rows');
+}
+function processImport(){
+  if(!rawCSVRows.length){toast('\u26a0 Load a CSV file first');return;}
+  if(holidayOn){toast('\u26a0 Holiday mode ON \u2014 toggle off to import');return;}
+  // Left: C=2:S.No | D=3:Symbol | E=4:LTP | H=7:Open | I=8:High | J=9:Low | K=10:Volume
+  // Right: O=14:Symbol | R=17:High | S=18:Low | T=19:Close | X=24:Vol | AC=29:Range | AE=31:Range% | AJ=35:52WH | AK=36:52WL
+  var scCol=3,clCol=4,hiCol=8,loCol=9,opCol=7,vlCol=10;
+  var scColR=14,w52hCol=35,w52lCol=36,rgColR=29,rpColR=31;
+  // Build right-side 52W lookup map
+  var w52map={};
+  rawCSVRows.forEach(function(row){
+    if(!row[scColR])return;
+    var s=row[scColR].toUpperCase().trim();
+    if(!s||s.length<2)return;
+    var w52h=parseFloat((row[w52hCol]||'').replace(/,/g,''))||0;
+    var w52l=parseFloat((row[w52lCol]||'').replace(/,/g,''))||0;
+    var rng=parseFloat((row[rgColR]||'').replace(/,/g,''))||0;
+    var rp=(row[rpColR]||'').replace(/,/g,'').trim();
+    if(w52h>0||w52l>0) w52map[s]={w52h:w52h,w52l:w52l,range:rng,rangePct:rp};
+  });
+  console.log('52W map: '+Object.keys(w52map).length+' scrips');
+  var skip=['','-','SCRIP','SYMBOL','S.N','SN','NO','S.NO','LTP','POINT','NAME','STOCK','COMPANY'];
+  eodData=[];
+  rawCSVRows.forEach(function(row){
+    if(!row[scCol])return;
+    var scrip=row[scCol].toUpperCase().trim();
+    if(skip.indexOf(scrip)>-1||(!isNaN(parseFloat(scrip))&&scrip.length<5))return;
+    var close=parseFloat((row[clCol]||'').replace(/,/g,''))||0;
+    if(!close||isNaN(close))return;
+    var open=parseFloat((row[opCol]||'').replace(/,/g,''))||0;
+    var high=parseFloat((row[hiCol]||'').replace(/,/g,''))||0;
+    var low=parseFloat((row[loCol]||'').replace(/,/g,''))||0;
+    var vol=parseFloat((row[vlCol]||'').replace(/,/g,''))||0;
+    var range=high>0&&low>0?high-low:0;
+    var rp=range>0&&high>0?(range/high*100).toFixed(2)+'%':'';
+    var rn=parseFloat(rp)||0;
+    var sig=rn<0.8&&vol>500000?'\u26a1 Bolt':rn>2&&vol>500000?'\u26a0 Dist':vol<50000?'\ud83d\udca4 Dry':rn>1.5?'\ud83d\udd34 Wide':'\u2015 Normal';
+    // Get 52W from map
+    var w52=w52map[scrip]||{};
+    eodData.push({scrip:scrip,open:open,high:high,low:low,close:close,vol:vol,
+      range:range,rangePct:rp,signal:sig,w52h:w52.w52h||0,w52l:w52.w52l||0});
+  });
+  if(!eodData.length){toast('\u26a0 No valid data \u2014 check: D=Symbol E=LTP I=High J=Low K=Vol');return;}
+  var now=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  try{localStorage.setItem('twv_eod_data',JSON.stringify(eodData));localStorage.setItem('twv_eod_date',now);localStorage.setItem('twv_eod_count',eodData.length);}catch(e){}
+  document.getElementById('eod-last-import').textContent=now;
+  document.getElementById('eod-scrips-count').textContent=eodData.length;
+  document.getElementById('eod-session-status').textContent='\u2705 '+eodData.length+' scrips imported';
+  document.getElementById('eod-session-status').className='eod-status-val bull';
+  renderEODTable();
+  buildSearchIndex();
+  saveEODToStorage();
+  toast('\u2713 EOD imported \u2014 '+eodData.length+' scrips - search ready');
+}
+function renderEODTable(){
+  var tbody=document.getElementById('eod-tbody'),prev=document.getElementById('eod-preview');
+  if(!tbody||!eodData.length)return;
+  prev.style.display='block';document.getElementById('eod-preview-count').textContent=eodData.length+' scrips';
+  var html='';
+  eodData.forEach(function(d,i){
+    var rn=parseFloat((d.rangePct||'').replace('%',''))||0;
+    var rc=rn<0.8?'range-bull':rn>2?'range-bear':'range-neut';
+    var vf=d.vol>=1e9?(d.vol/1e9).toFixed(2)+'B':d.vol>=1e6?(d.vol/1e6).toFixed(2)+'M':d.vol.toLocaleString();
+    html+='<tr><td style="color:var(--muted);">'+(i+1)+'</td><td style="color:#fff;font-weight:600;">'+d.scrip+'</td><td>'+(d.open?fmt(d.open):'--')+'</td><td style="color:var(--bull);">'+(d.high?fmt(d.high):'--')+'</td><td style="color:var(--bear);">'+(d.low?fmt(d.low):'--')+'</td><td style="color:var(--q);font-weight:700;">'+fmt(d.close)+'</td><td>'+vf+'</td><td class="'+rc+'">'+(d.range?d.range.toFixed(2):'--')+'</td><td class="'+rc+'">'+(d.rangePct||'--')+'</td><td style="color:var(--bull);font-size:10px;">'+(d.w52h?fmt(d.w52h):'--')+'</td><td style="color:var(--bear);font-size:10px;">'+(d.w52l?fmt(d.w52l):'--')+'</td><td style="font-size:9px;color:var(--muted);">'+d.signal+'</td></tr>';
+  });
+  tbody.innerHTML=html;
+}
+function clearEOD(){
+  eodData=[];rawCSVRows=[];
+  try{localStorage.removeItem('twv_eod_data');localStorage.removeItem('twv_eod_date');localStorage.removeItem('twv_eod_count');}catch(e){}
+  document.getElementById('eod-tbody').innerHTML='';
+  document.getElementById('eod-preview').style.display='none';
+  document.getElementById('eod-last-import').textContent='Never';
+  document.getElementById('eod-scrips-count').textContent='0';
+  document.getElementById('eod-session-status').textContent='Ready for import';
+  document.getElementById('eod-session-status').className='eod-status-val bull';
+  var dz=document.getElementById('eod-drop-zone');
+  dz.style.borderColor='';dz.style.background='';
+  dz.innerHTML='<div class="eod-drop-icon">&#128194;</div><div class="eod-drop-text"><b style="color:#fff;">Click or drag CSV file here</b><br>Export from Google Sheets after 3pm</div>';
+  toast('EOD cleared');
+}
+
+// ==============================
+// EOD BACKUP / RESTORE
+// ==============================
+function exportEODBackup(){
+  if(!eodData||!eodData.length){
+    // Try loading from localStorage first
+    try{
+      var s=localStorage.getItem('twv_eod_data');
+      if(s) eodData=JSON.parse(s);
+    }catch(e){}
+  }
+  if(!eodData||!eodData.length){toast('⚠ No EOD data to backup - import CSV first');return;}
+  var backup={
+    date:localStorage.getItem('twv_eod_date')||new Date().toISOString().split('T')[0],
+    count:eodData.length,
+    data:eodData
+  };
+  var json=JSON.stringify(backup,null,2);
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+  a.download='TWV_EOD_Backup_'+new Date().toISOString().split('T')[0]+'.json';
+  a.click();
+  toast('✓ EOD backup saved - '+eodData.length+' scrips');
+}
+
+function restoreEODBackup(input){
+  var file=input.files[0];
+  if(!file){return;}
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var backup=JSON.parse(e.target.result);
+      if(!backup.data||!backup.data.length){toast('⚠ Invalid backup file');return;}
+      eodData=backup.data;
+      localStorage.setItem('twv_eod_data',JSON.stringify(eodData));
+      localStorage.setItem('twv_eod_date',backup.date||'Restored');
+      localStorage.setItem('twv_eod_count',eodData.length);
+      document.getElementById('eod-last-import').textContent=backup.date+' (restored)';
+      document.getElementById('eod-scrips-count').textContent=eodData.length;
+      document.getElementById('eod-session-status').textContent='✅ '+eodData.length+' scrips restored from backup';
+      document.getElementById('eod-session-status').className='eod-status-val bull';
+      renderEODTable();
+      toast('✓ EOD restored - '+eodData.length+' scrips loaded');
+    }catch(err){toast('⚠ Could not read backup file');}
+  };
+  reader.readAsText(file);
+}
+
+// ==============================
+// QUICK SEARCH
+// ==============================
+// Search index for fast lookup
+var _searchIndex=[];
+function buildSearchIndex(){
+  _searchIndex=[];
+  if(eodData&&eodData.length){
+    eodData.forEach(function(d){
+      _searchIndex.push({scrip:d.scrip,ltp:d.close,src:'eod',w52h:d.w52h||0,w52l:d.w52l||0});
+    });
+  }
+  Object.keys(presets).forEach(function(k){
+    if(!_searchIndex.find(function(m){return m.scrip===k;})){
+      _searchIndex.push({scrip:k,ltp:presets[k].state.close,src:'preset',w52h:presets[k].state.w52h||0,w52l:presets[k].state.w52l||0});
+    }
+  });
+}
+function qsInput(val){
+  val=(val||'').toUpperCase().trim();
+  var dd=document.getElementById('qs-dd');
+  if(!val){dd.innerHTML='';dd.style.display='none';return;}
+  if(!_searchIndex.length) buildSearchIndex();
+  var exact=[],starts=[],contains=[];
+  _searchIndex.forEach(function(d){
+    if(d.scrip===val) exact.push(d);
+    else if(d.scrip.indexOf(val)===0) starts.push(d);
+    else if(d.scrip.indexOf(val)>0) contains.push(d);
+  });
+  var matches=exact.concat(starts).concat(contains);
+  if(!matches.length){
+    dd.innerHTML='<div style="font-family:var(--mono);font-size:9px;color:var(--muted);padding:8px 12px;">No match found</div>';
+    dd.style.display='block';
+    return;
+  }
+  dd.innerHTML=matches.slice(0,12).map(function(m){
+    var col=m.src==='eod'?'var(--m)':'var(--q)';
+    var w52=m.w52h?(' H:'+fmt(m.w52h)):'';
+    var div='<div onclick="qsSelect(\'' +m.scrip+ '\')" style="padding:6px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">';
+    div+='<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:'+col+';">'+m.scrip+'</span>';
+    div+='<span style="font-family:var(--mono);font-size:11px;color:#fff;">'+(m.ltp?fmt(m.ltp):'--')+w52+'</span></div>';
+    return div;
+  }).join('');
+  dd.style.display='block';
+}
+function qsSelect(scrip){document.getElementById('quick-search').value=scrip;document.getElementById('qs-dd').style.display='none';qsGo(scrip);}
+function qsGo(scrip){
+  scrip=scrip||(document.getElementById('quick-search').value.toUpperCase().trim());
+  if(!scrip)return;
+  // EOD first
+  if(eodData&&eodData.length){
+    var found=eodData.find(function(d){return d.scrip===scrip;})||eodData.find(function(d){return d.scrip.indexOf(scrip)===0;})||null;
+    if(found){
+      state.ticker=found.scrip;state.close=found.close;state.open=found.open||found.close;
+      state.high=found.high||found.close;state.low=found.low||found.close;
+      state.vol=found.vol>=1e9?(found.vol/1e9).toFixed(2)+'B':found.vol>=1e6?(found.vol/1e6).toFixed(2)+'M':found.vol.toLocaleString();
+      state.chg='0.00 (0.00%)';
+      var js=document.getElementById('jf-sector');
+      if(js){var op=Array.from(js.options).find(function(o){return o.value===found.scrip||o.text===found.scrip;});if(op)js.value=op.value;}
+      var je=document.getElementById('jf-entry');if(je&&!je.value)je.value=found.close;
+      var jsl=document.getElementById('jf-sl');if(jsl&&!jsl.value)jsl.value=found.low;
+      var pce=document.getElementById('pc-entry');if(pce)pce.value=found.close;
+      var pcsl=document.getElementById('pc-sl');if(pcsl)pcsl.value=found.low;
+      calcPosition();populateEditorFields();
+      if(found.w52h&&found.w52l){
+        autoFillLevels(found.scrip,found.close,found.w52h,found.w52l);
+        renderLevelEditor();
+      }
+      autoSave();renderDashboard();renderQMLTable();renderPriceMap();switchTab('dashboard');
+      toast('\u2713 '+found.scrip+' \u2014 LTP: '+fmt(found.close)+' | 52WH: '+fmt(found.w52h||0)+' | 52WL: '+fmt(found.w52l||0)+' | Levels auto-filled');
+      document.getElementById('quick-search').value='';return;
+    }
+  }
+  // Preset fallback
+  if(presets[scrip]){loadPreset(scrip);document.getElementById('scrip-select').value=scrip;document.getElementById('quick-search').value='';return;}
+  var sim=eodData?eodData.filter(function(d){return d.scrip.substring(0,3)===scrip.substring(0,3);}).slice(0,3):[];
+  toast('\u26a0 '+scrip+' not found'+(sim.length?' \u2014 Similar: '+sim.map(function(d){return d.scrip;}).join(','):''));
+}
+
+// ==============================
+// WEEKLY CHECKLIST
+// ==============================
+var wkState={items:{},notes:'',week:''};
+function loadWkState(){
+  try{var s=localStorage.getItem('twv_weekly');if(s)wkState=JSON.parse(s);}catch(e){}
+  for(var i=1;i<=12;i++){
+    var done=wkState.items[i]||false;
+    var item=document.getElementById('wi-'+i),chk=document.getElementById('wc-'+i);
+    if(item&&chk){item.classList.toggle('done',done);chk.innerHTML=done?'\u2713':'';}
+  }
+  if(document.getElementById('wk-notes'))document.getElementById('wk-notes').value=wkState.notes||'';
+  if(document.getElementById('wk-week'))document.getElementById('wk-week').value=wkState.week||'';
+  updateWkProgress();
+}
+function saveWkState(){
+  wkState.notes=document.getElementById('wk-notes')?document.getElementById('wk-notes').value:'';
+  wkState.week=document.getElementById('wk-week')?document.getElementById('wk-week').value:'';
+  try{localStorage.setItem('twv_weekly',JSON.stringify(wkState));}catch(e){}
+}
+function toggleWk(n){
+  wkState.items[n]=!wkState.items[n];
+  var done=wkState.items[n];
+  var item=document.getElementById('wi-'+n),chk=document.getElementById('wc-'+n);
+  if(item)item.classList.toggle('done',done);if(chk)chk.innerHTML=done?'\u2713':'';
+  saveWkState();updateWkProgress();toast(done?'\u2713 Done':'Unchecked');
+}
+function updateWkProgress(){
+  var done=Object.values(wkState.items).filter(Boolean).length,total=12;
+  var pct=Math.round(done/total*100);
+  var pe=document.getElementById('wk-pct'),be=document.getElementById('wk-bar'),se=document.getElementById('wk-status');
+  if(!pe)return;
+  pe.textContent=pct+'%';be.style.width=pct+'%';
+  if(pct===100){pe.style.color='var(--bull)';be.style.background='var(--bull)';se.textContent='All done \u2014 ready to publish \u2705';}
+  else if(pct>=50){pe.style.color='var(--m)';be.style.background='var(--m)';se.textContent=done+' of '+total+' tasks';}
+  else{pe.style.color='var(--neutral)';be.style.background='var(--neutral)';se.textContent=done+' of '+total+' tasks';}
+}
+function resetChecklist(){wkState.items={};saveWkState();loadWkState();toast('Reset');}
+function exportWeekly(){
+  var tasks=['Weekly OHLC entered','Pivot calculated','DPO 21 updated','Volume noted','QML levels reviewed','Signal Engine run','First candle bias','Volume VSA confirmed','HydroPower checked','EOD data imported','Dashboard updated','Video published'];
+  var lines=['TRADE WITH VIBES Weekly Summary','Week: '+(wkState.week||'--'),'Done: '+Object.values(wkState.items).filter(Boolean).length+'/12',''];
+  tasks.forEach(function(t,i){lines.push((wkState.items[i+1]?'[x] ':'[ ] ')+t);});
+  if(wkState.notes){lines.push('');lines.push('NOTES:');lines.push(wkState.notes);}
+  lines.push('');lines.push('nepsevibes.com');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));a.download='TWV_Weekly_'+new Date().toISOString().split('T')[0]+'.txt';a.click();toast('\u2713 Exported');
+}
+
+// ==============================
+// EXPORT
+// ==============================
+function exportCSV(){
+  var rows=[['TRADE WITH VIBES QML Export'],['Ticker',state.ticker,'Date',state.date,'Close',state.close],['Open',state.open,'High',state.high,'Low',state.low,'Vol',state.vol],[],['QML LEVELS'],['Tier','Type','Price','Dist%','Confluence','Note']];
+  levels.slice().sort(function(a,b){return b.price-a.price;}).forEach(function(lv){rows.push([lv.tier,lv.type,lv.price,pct(lv.price,state.close)+'%',lv.conf,lv.note]);});
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+(c+'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='TWV_QML_'+state.ticker+'_'+state.date+'.csv';a.click();toast('\u2713 CSV downloaded');
+}
+function exportXLSX(){
+  if(typeof XLSX==='undefined'){toast('SheetJS not loaded');return;}
+  var wb=XLSX.utils.book_new();
+  // Sheet 1: Summary
+  var s1=[
+    ['TRADE WITH VIBES -- QML Dashboard Export'],
+    ['Scrip',state.ticker,'Date',state.date,'LTP',state.close],
+    ['Open',state.open,'High',state.high,'Low',state.low,'Volume',state.vol,'Change',state.chg],
+    [],
+    ['INDICATORS'],
+    ['RSI 14',state.rsi,'WMA 9',state.wma,'DPO 21',state.dpo],
+    ['SEB 21',state.seb,'DC-89',state.dc89,'Ichimoku',state.ichimoku],
+    ['52W High',state.w52h,'52W Low',state.w52l],
+    [],
+    ['TRADE PLAN'],
+    ['Entry Low',state.entryLo,'Entry High',state.entryHi,'Stop Loss',state.sl],
+    ['Target 1 Low',state.t1lo,'Target 1 High',state.t1hi,'Target 2 Low',state.t2lo,'Target 2 High',state.t2hi],
+    [],
+    ['SIGNALS'],
+    ['Q Structure',state.sigQ],
+    ['M Structure',state.sigM],
+    ['L Structure',state.sigL],
+    ['vs SEB',state.sigSEB],
+    ['vs DC-89',state.sigDC]
+  ];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s1),'Summary');
+  // Sheet 2: QML Levels
+  var s2=[['QML LEVELS -- '+state.ticker+' -- '+state.date],
+    ['Tier','Type','Price','Dist%','Confluence','Note']];
+  levels.slice().sort(function(a,b){return b.price-a.price;}).forEach(function(lv){
+    s2.push([lv.tier,lv.type,lv.price,parseFloat(pct(lv.price,state.close))+'%',lv.conf,lv.note]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s2),'Levels');
+  // Sheet 3: Journal
+  if(trades&&trades.length){
+    var s3=[['TRADE JOURNAL -- Trade With Vibes'],
+      ['Date','Scrip','Direction','Entry','Exit','SL','Units','P&L','R:R','System','Status','Notes']];
+    trades.forEach(function(t){
+      s3.push([t.date,t.sector,t.dir,t.entry,t.exit||'',t.sl||'',t.vol,
+        t.exit?parseFloat(t.pnl.toFixed(2)):'open',t.rr,t.system,t.status,t.notes||'']);
+    });
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s3),'Journal');
+  }
+  // Sheet 4: Sector Breadth
+  var s4=[['SECTOR BREADTH -- '+fmtDate(presets.NEPSE.state.date)],
+    ['Sector','Close','Change%','Signal']];
+  ['NEPSE','BANKING','DEVBANK','FINANCE','MICROFINANCE','HYDROPOWER',
+   'NONLIFEINSU','LIFEINSU','HOTELS','TRADING','MANUFACTURING','INVESTMENT','OTHERS','MUTUALFUND'].forEach(function(k){
+    var p=presets[k];if(!p)return;
+    var chg=p.state.chg||'';
+    var m=chg.match(/([+-]?[0-9.]+)%/);
+    var pctVal=m?parseFloat(m[1]):0;
+    s4.push([k,p.state.close,chg,pctVal>0?'BULL':'BEAR']);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s4),'Sectors');
+  XLSX.writeFile(wb,'TWV_'+state.ticker+'_'+state.date+'.xlsx');
+  toast('\u2713 Excel: 4 sheets -- Summary+Levels+Journal+Sectors');
+}
+function exportHTML(){
+  var snap='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QML '+state.ticker+' '+state.date+'</title><style>body{font-family:monospace;background:#070b12;color:#c8d8e8;padding:20px;}table{border-collapse:collapse;width:100%;margin-bottom:16px;}th,td{border:1px solid rgba(255,255,255,0.1);padding:6px 11px;font-size:11px;}th{background:rgba(255,255,255,0.05);color:#6a7f95;}.q{color:#7c6af0;}.m{color:#1ab87a;}.l{color:#e8a030;}.bear{color:#e74c3c;}.bull{color:#2ecc71;}</style></head><body>'
+    +'<h1 style="color:#fff;font-size:15px;margin-bottom:4px;">'+state.ticker+' QML Setup</h1>'
+    +'<p style="color:#6a7f95;font-size:10px;margin-bottom:14px;">Trade With Vibes \u00b7 '+fmtDate(state.date)+' \u00b7 Close: '+fmt(state.close)+'</p>'
+    +'<table><tr><th>Open</th><th>High</th><th>Low</th><th>Close</th><th>Vol</th></tr><tr><td>'+fmt(state.open)+'</td><td class="bull">'+fmt(state.high)+'</td><td class="bear">'+fmt(state.low)+'</td><td><b>'+fmt(state.close)+'</b></td><td>'+state.vol+'</td></tr></table>'
+    +'<table><tr><th>Tier</th><th>Type</th><th>Price</th><th>Dist%</th><th>Note</th></tr>';
+  levels.slice().sort(function(a,b){return b.price-a.price;}).forEach(function(lv){
+    snap+='<tr><td class="'+lv.tier.toLowerCase()+'"><b>'+lv.tier+'</b></td><td>'+lv.type+'</td><td><b>'+fmt(lv.price)+'</b></td><td>'+pct(lv.price,state.close)+'%</td><td>'+lv.note+'</td></tr>';
+  });
+  snap+='</table><p style="color:#6a7f95;font-size:9px;">nepsevibes.com \u00b7 '+new Date().toLocaleString()+'</p></body></html>';
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([snap],{type:'text/html'}));a.download='QML_'+state.ticker+'_'+state.date+'.html';a.click();toast('\u2713 Snapshot saved');
+}
+
+// ==============================
+// AUTO-FILL JOURNAL FROM SCRIP
+// ==============================
+function autoFillJournal(scrip){
+  if(!scrip) return;
+  // Search EOD data first
+  var found = null;
+  if(eodData && eodData.length){
+    found = eodData.find(function(d){return d.scrip===scrip;});
+  }
+  if(found){
+    // Fill entry with LTP
+    var je=document.getElementById('jf-entry');
+    if(je) je.value=found.close;
+    // Fill SL with today's low
+    var jsl=document.getElementById('jf-sl');
+    if(jsl) jsl.value=found.low;
+    // Fill position calculator too
+    var pce=document.getElementById('pc-entry');
+    if(pce) pce.value=found.close;
+    var pcsl=document.getElementById('pc-sl');
+    if(pcsl) pcsl.value=found.low;
+    // Update journal header display
+    var jd=document.getElementById('jf-scrip-display');
+    if(jd){
+      var vol=found.vol>=1e9?(found.vol/1e9).toFixed(2)+'B':found.vol>=1e6?(found.vol/1e6).toFixed(2)+'M':found.vol.toLocaleString();
+      var rng=found.range?found.range.toFixed(2):'--';
+      var rp=found.rangePct||'--';
+      jd.innerHTML=scrip+' — LTP: <b style="color:var(--q);">'+fmt(found.close)+'</b>'
+        +' | High: <span style="color:var(--bull);">'+fmt(found.high)+'</span>'
+        +' | Low: <span style="color:var(--bear);">'+fmt(found.low)+'</span>'
+        +' | Vol: <span style="color:var(--l);">'+vol+'</span>'
+        +' | Range: <span style="color:var(--neutral);">'+rng+' ('+rp+')</span>';
+    }
+    // Also update planner scrip and fill 52W if available
+    var fps=document.getElementById('fp-scrip');
+    if(fps){
+      var opt=Array.from(fps.options).find(function(o){return o.value===scrip||o.text===scrip;});
+      if(opt) fps.value=opt.value;
+    }
+    var fpc=document.getElementById('fp-cur');
+    if(fpc) fpc.value=found.close;
+    // Auto-fill 52W High/Low in planner if available
+    if(found.w52h){
+      var fp52h=document.getElementById('fp-52wh');
+      if(fp52h) fp52h.value=found.w52h;
+    }
+    if(found.w52l){
+      var fp52l=document.getElementById('fp-52wl');
+      if(fp52l) fp52l.value=found.w52l;
+    }
+    // Trigger range bar update
+    if(found.w52h&&found.w52l) updateRangeBar();
+    // Update state
+    state.ticker=scrip;
+    state.close=found.close;
+    state.open=found.open||found.close;
+    state.high=found.high||found.close;
+    state.low=found.low||found.close;
+    state.vol=found.vol>=1e9?(found.vol/1e9).toFixed(2)+'B':found.vol>=1e6?(found.vol/1e6).toFixed(2)+'M':found.vol.toLocaleString();
+    state.chg='0.00 (0.00%)';
+    calcPosition();
+    // Auto-fill levels if 52W data available
+    if(found.w52h&&found.w52l){
+      autoFillLevels(scrip,found.close,found.w52h,found.w52l);
+    }
+    toast('✓ '+scrip+' - LTP: '+fmt(found.close)+' | 52W H:'+fmt(found.w52h||0)+' L:'+fmt(found.w52l||0));
+  } else if(presets[scrip]){
+    // Load from preset
+    var p=presets[scrip];
+    var je=document.getElementById('jf-entry');if(je) je.value=p.state.close;
+    var jsl=document.getElementById('jf-sl');if(jsl) jsl.value=p.state.sl;
+    var pce=document.getElementById('pc-entry');if(pce) pce.value=p.state.close;
+    var pcsl=document.getElementById('pc-sl');if(pcsl) pcsl.value=p.state.sl;
+    var jd=document.getElementById('jf-scrip-display');
+    if(jd) jd.innerHTML=scrip+' — LTP: <b style="color:var(--q);">'+fmt(p.state.close)+'</b>'
+      +' | 52W H: <span style="color:var(--bull);">'+fmt(p.state.w52h)+'</span>'
+      +' | 52W L: <span style="color:var(--bear);">'+fmt(p.state.w52l)+'</span>';
+    var fpc=document.getElementById('fp-cur');if(fpc) fpc.value=p.state.close;
+    var fp52h=document.getElementById('fp-52wh');if(fp52h) fp52h.value=p.state.w52h;
+    var fp52l=document.getElementById('fp-52wl');if(fp52l) fp52l.value=p.state.w52l;
+    calcPosition();
+    toast('✓ '+scrip+' loaded from preset');
+  } else {
+    var jd=document.getElementById('jf-scrip-display');
+    if(jd) jd.textContent=scrip+' - Import EOD data for live prices';
+  }
+}
+
+function autoFillPosition(scrip){
+  // Mirror journal auto-fill for position calculator
+  autoFillJournal(scrip);
+  // Sync journal scrip selector
+  var js=document.getElementById('jf-sector');
+  if(js){
+    var opt=Array.from(js.options).find(function(o){return o.value===scrip||o.text===scrip;});
+    if(opt) js.value=opt.value;
+  }
+}
+
+// ==============================
+// INIT
+// ==============================
+var state=JSON.parse(JSON.stringify(presets.NEPSE.state));
+var levels=JSON.parse(JSON.stringify(presets.NEPSE.levels));
+loadSavedState();
+loadEODFromStorage();
+renderDashboard();
+populateEditorFields();
+</script>
+</body>
+</html>
