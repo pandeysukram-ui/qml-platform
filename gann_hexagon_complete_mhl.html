@@ -1,0 +1,856 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&family=Share+Tech+Mono&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0d0f;font-family:'Share Tech Mono',monospace;color:#c8d6e0;min-height:100vh}
+.scanline{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:999}
+.dot-grid{position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle,rgba(100,200,160,0.04) 1px,transparent 1px);background-size:20px 20px;pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;padding:14px;max-width:980px;margin:0 auto}
+
+/* Header */
+.hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(100,200,160,0.2);padding-bottom:8px;margin-bottom:12px}
+.brand{font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:700;color:#f0b429;letter-spacing:3px}
+.sub{font-size:9px;color:#4a7a6a;letter-spacing:2px;margin-top:2px}
+
+/* Mode bar */
+.mode-bar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.tb-wrap{display:flex;border:1px solid rgba(100,200,160,0.2);border-radius:4px;overflow:hidden;flex:1;max-width:300px}
+.tb-btn{flex:1;padding:9px 0;text-align:center;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all 0.25s;border:none;background:transparent}
+.tb-btn.bottom{color:#2a6a4a;border-right:1px solid rgba(100,200,160,0.2)}
+.tb-btn.top{color:#6a2a2a}
+.ab{background:rgba(100,200,160,0.15);color:#64c8a0!important;box-shadow:inset 0 0 12px rgba(100,200,160,0.08)}
+.at{background:rgba(224,92,92,0.15);color:#e05c5c!important;box-shadow:inset 0 0 12px rgba(224,92,92,0.08)}
+.np-wrap{display:flex;border:1px solid rgba(240,180,41,0.2);border-radius:4px;overflow:hidden}
+.np-btn{padding:9px 16px;font-family:'Chakra Petch',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all 0.25s;border:none;background:transparent;color:#3a5a4a}
+.an{background:rgba(0,212,232,0.1);color:#00d4e8!important}
+.ap{background:rgba(240,180,41,0.1);color:#f0b429!important}
+.np-sep{width:1px;background:rgba(240,180,41,0.2)}
+.mode-pill{padding:6px 14px;border-radius:20px;font-family:'Chakra Petch',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;transition:all 0.3s}
+.pill-b{background:rgba(100,200,160,0.1);color:#64c8a0;border:1px solid rgba(100,200,160,0.35)}
+.pill-t{background:rgba(224,92,92,0.1);color:#e05c5c;border:1px solid rgba(224,92,92,0.35)}
+
+/* Panel */
+.panel{background:rgba(10,20,25,0.88);border:1px solid rgba(100,200,160,0.15);border-radius:5px;padding:12px;margin-bottom:10px;transition:all 0.3s}
+.panel.pg{border-color:rgba(100,200,160,0.3);box-shadow:0 0 14px rgba(100,200,160,0.05)}
+.panel.pr{border-color:rgba(224,92,92,0.3);box-shadow:0 0 14px rgba(224,92,92,0.05)}
+.panel.dimmed{opacity:0.2;pointer-events:none;filter:grayscale(0.7)}
+.pt{font-family:'Chakra Petch',sans-serif;font-size:9px;font-weight:600;color:#f0b429;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid rgba(240,180,41,0.15);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bdg{display:inline-block;padding:1px 7px;border-radius:2px;font-size:8px;font-family:'Chakra Petch',sans-serif;font-weight:600;letter-spacing:1px}
+.bg{background:rgba(100,200,160,0.12);color:#64c8a0;border:1px solid rgba(100,200,160,0.25)}
+.ba{background:rgba(240,180,41,0.12);color:#f0b429;border:1px solid rgba(240,180,41,0.25)}
+.br{background:rgba(224,92,92,0.12);color:#e05c5c;border:1px solid rgba(224,92,92,0.25)}
+.bc{background:rgba(0,212,232,0.1);color:#00d4e8;border:1px solid rgba(0,212,232,0.25)}
+.bpu{background:rgba(200,100,255,0.1);color:#c864ff;border:1px solid rgba(200,100,255,0.25)}
+
+/* Inputs */
+.fg{display:grid;gap:8px;margin-bottom:8px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g5{grid-template-columns:repeat(5,1fr)}
+.ig{display:flex;flex-direction:column;gap:3px}
+.ig label{font-size:8px;color:#4a7a6a;letter-spacing:1.5px;text-transform:uppercase;font-family:'Chakra Petch',sans-serif}
+.ig input,.ig select{background:#060f13;border:1px solid rgba(100,200,160,0.18);color:#64c8a0;font-family:'Share Tech Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;outline:none;width:100%;transition:all 0.2s}
+.ig input:focus,.ig select:focus{border-color:rgba(100,200,160,0.55);background:#080f15}
+.ig input::placeholder{color:#1a3a2a;font-size:10px}
+.ig select option{background:#060f13;color:#64c8a0}
+.i-red input{color:#e05c5c!important;border-color:rgba(224,92,92,0.22)!important}
+.i-red input:focus{border-color:rgba(224,92,92,0.55)!important}
+.i-amb input{color:#f0b429!important;border-color:rgba(240,180,41,0.22)!important}
+.i-amb input:focus{border-color:rgba(240,180,41,0.55)!important}
+.i-cyn input{color:#00d4e8!important;border-color:rgba(0,212,232,0.22)!important}
+.i-cyn input:focus{border-color:rgba(0,212,232,0.55)!important}
+.i-mhl input{color:#c864ff!important;border-color:rgba(200,100,255,0.35)!important;background:rgba(200,100,255,0.04)!important;font-weight:700}
+/* MHL auto pulse */
+@keyframes mhlPulse{0%{box-shadow:0 0 0 rgba(200,100,255,0.4)}50%{box-shadow:0 0 10px rgba(200,100,255,0.4)}100%{box-shadow:0 0 0 rgba(200,100,255,0.4)}}
+.mhl-live{animation:mhlPulse 1.5s infinite}
+.tip{font-size:7px;color:#1a3a2a;font-family:'Chakra Petch',sans-serif;margin-top:1px}
+.auto-lbl{font-size:7px;color:#c864ff;font-family:'Chakra Petch',sans-serif;margin-top:1px;letter-spacing:1px}
+
+/* Presets */
+.pr-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.pb{font-size:8px;padding:3px 9px;border:1px solid rgba(100,200,160,0.14);border-radius:2px;color:#2a5a4a;font-family:'Chakra Petch',sans-serif;cursor:pointer;transition:all 0.2s;background:transparent;letter-spacing:1px}
+.pb:hover{border-color:rgba(100,200,160,0.4);color:#64c8a0;background:rgba(100,200,160,0.05)}
+
+/* Buttons */
+.btn-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.btn{font-family:'Chakra Petch',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;padding:9px 18px;border-radius:3px;cursor:pointer;transition:all 0.2s;border:none}
+.bn-g{background:rgba(100,200,160,0.14);border:1px solid rgba(100,200,160,0.45);color:#64c8a0}
+.bn-g:hover{background:rgba(100,200,160,0.24)}
+.bn-r{background:rgba(224,92,92,0.14);border:1px solid rgba(224,92,92,0.45);color:#e05c5c}
+.bn-r:hover{background:rgba(224,92,92,0.24)}
+.bn-a{background:rgba(240,180,41,0.1);border:1px solid rgba(240,180,41,0.4);color:#f0b429}
+.bn-a:hover{background:rgba(240,180,41,0.2)}
+.bn-h{background:transparent;border:1px solid rgba(100,200,160,0.14);color:#4a7a6a}
+.bn-h:hover{border-color:rgba(100,200,160,0.3);color:#64c8a0}
+
+/* Status */
+.sbar{display:flex;align-items:center;gap:8px;background:rgba(6,15,19,0.95);border:1px solid rgba(100,200,160,0.1);border-radius:3px;padding:6px 12px;font-size:9px;color:#4a7a6a;margin-top:8px}
+.sdot{width:6px;height:6px;border-radius:50%;background:#1a3a2a;flex-shrink:0;transition:all 0.3s}
+.sdot.on{background:#64c8a0;box-shadow:0 0 6px rgba(100,200,160,0.5)}
+.sdot.on-r{background:#e05c5c;box-shadow:0 0 6px rgba(224,92,92,0.5)}
+.sdot.on-p{background:#c864ff;box-shadow:0 0 6px rgba(200,100,255,0.5)}
+
+/* Output */
+.stat-row{display:grid;gap:7px;margin-bottom:10px}
+.sc{background:rgba(6,15,19,0.95);border:1px solid rgba(100,200,160,0.1);border-radius:3px;padding:8px 10px;text-align:center}
+.sc .lb{font-size:7px;color:#4a7a6a;letter-spacing:1.5px;text-transform:uppercase;font-family:'Chakra Petch',sans-serif;margin-bottom:2px}
+.sc .vl{font-size:16px;font-weight:700;font-family:'Chakra Petch',sans-serif}
+.sc .sv{font-size:8px;color:#4a7a6a;margin-top:1px}
+.vc{color:#64c8a0}.va{color:#f0b429}.vr{color:#e05c5c}.vb{color:#4ab4ff}.vcn{color:#00d4e8}.vpu{color:#c864ff}
+
+/* Target rows */
+.trow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(100,200,160,0.06)}
+.trow:last-child{border-bottom:none}
+.tval{font-size:17px;font-weight:700;font-family:'Chakra Petch',sans-serif}
+.tpct{font-size:8px;color:#4a7a6a;min-width:48px;text-align:right}
+
+/* 315 spoke */
+.spoke-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.sc315{display:flex;flex-direction:column;align-items:center;background:rgba(240,180,41,0.06);border:1px solid rgba(240,180,41,0.18);border-radius:3px;padding:7px 10px;min-width:76px;transition:all 0.2s;cursor:default}
+.sc315:hover{background:rgba(240,180,41,0.14);border-color:rgba(240,180,41,0.5)}
+.sc315.match{background:rgba(240,180,41,0.18)!important;border-color:#f0b429!important;box-shadow:0 0 10px rgba(240,180,41,0.25)}
+.sc315 .sr{font-size:7px;color:#4a7a6a;font-family:'Chakra Petch',sans-serif}
+.sc315 .sv2{font-size:16px;font-weight:700;font-family:'Chakra Petch',sans-serif;color:#f0b429}
+.sc315 .sn{font-size:7px;color:#3a5a3a}
+
+/* MHL display */
+.mhl-display{display:flex;align-items:center;gap:10px;background:rgba(200,100,255,0.06);border:1px solid rgba(200,100,255,0.25);border-radius:3px;padding:8px 14px;margin-bottom:10px}
+.mhl-display .ml{font-size:8px;color:#c864ff;font-family:'Chakra Petch',sans-serif;letter-spacing:1.5px}
+.mhl-display .mv{font-size:22px;font-weight:700;font-family:'Chakra Petch',sans-serif;color:#c864ff}
+.mhl-display .mf{font-size:9px;color:#4a6a5a;margin-left:auto}
+
+/* Guide box */
+.guide{background:rgba(0,212,232,0.04);border:1px solid rgba(0,212,232,0.15);border-radius:3px;padding:9px 12px;margin-bottom:10px;font-size:9px;line-height:1.8;color:#3a7a8a}
+.guide strong{color:#00d4e8;font-family:'Chakra Petch',sans-serif;letter-spacing:1px}
+
+/* Canvas */
+#hexCanvas{display:block;width:100%;border-radius:3px;margin-top:4px}
+
+/* Inactive msg */
+.inact{text-align:center;padding:24px;color:#1a3a2a;font-family:'Chakra Petch',sans-serif;font-size:10px;letter-spacing:2px;line-height:2}
+
+/* GHL cycle grid */
+.cycle-grid{display:flex;flex-wrap:wrap;gap:6px}
+.cc{display:flex;flex-direction:column;align-items:center;background:rgba(0,212,232,0.05);border:1px solid rgba(0,212,232,0.14);border-radius:3px;padding:6px 10px;min-width:80px}
+.cc .cm{font-size:7px;color:#4a7a6a;font-family:'Chakra Petch',sans-serif}
+.cc .cv{font-size:15px;font-weight:700;font-family:'Chakra Petch',sans-serif;color:#00d4e8}
+.cc .cd{font-size:7px;color:#2a5a4a}
+
+/* Angle pills */
+.apill{font-size:8px;padding:2px 8px;border:1px solid rgba(100,200,160,0.14);border-radius:2px;color:#2a5a4a;font-family:'Chakra Petch',sans-serif;cursor:pointer;transition:all 0.2s;letter-spacing:1px;display:inline-block;margin:2px}
+.apill.on{border-color:rgba(100,200,160,0.45);color:#64c8a0;background:rgba(100,200,160,0.07)}
+.apill.pw{border-color:rgba(240,180,41,0.25)!important;color:#6a5010}
+.apill.pw.on{border-color:rgba(240,180,41,0.6)!important;color:#f0b429!important;background:rgba(240,180,41,0.08)!important}
+
+/* Footer */
+.footer-brand{font-family:'Chakra Petch',sans-serif;font-size:9px;font-weight:700;color:#f0b429;letter-spacing:3px;text-align:center;margin-top:14px;padding-top:10px;border-top:1px solid rgba(240,180,41,0.15)}
+
+/* Pro-only hide/show */
+.pro-only{display:none}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="dot-grid"></div>
+<div class="wrap" id="mainWrap">
+
+<!-- Header -->
+<div class="hdr">
+  <div>
+    <div class="brand">▸ TRADE WITH VIBES — GANN HEXAGON</div>
+    <div class="sub">MHL AUTO · 315° POWER SPOKE · TOP / BOTTOM ENGINE · NEPSE</div>
+  </div>
+  <div style="text-align:right">
+    <div style="font-size:9px;color:#64c8a0" id="clk"></div>
+    <div style="font-size:8px;color:#4a7a6a;margin-top:2px">WHEEL OF 24</div>
+  </div>
+</div>
+
+<!-- Mode bar -->
+<div class="mode-bar">
+  <div class="tb-wrap">
+    <button class="tb-btn bottom ab" id="btnB" onclick="setMode('bottom')">▲ BOTTOM</button>
+    <button class="tb-btn top" id="btnT" onclick="setMode('top')">▼ TOP</button>
+  </div>
+  <div class="np-wrap">
+    <button class="np-btn an" id="btnN" onclick="setLevel('novice')">NOVICE</button>
+    <div class="np-sep"></div>
+    <button class="np-btn" id="btnP" onclick="setLevel('pro')">PRO</button>
+  </div>
+  <div class="mode-pill pill-b" id="modePill">▲ BOTTOM — RISE ACTIVE</div>
+  <div style="flex:1"></div>
+  <div style="font-size:8px;color:#4a7a6a;font-family:'Chakra Petch',sans-serif;text-align:right">
+    MODE <span id="mTag" style="color:#64c8a0">BOTTOM</span> &nbsp;·&nbsp;
+    LEVEL <span id="lTag" style="color:#00d4e8">NOVICE</span>
+  </div>
+</div>
+
+<!-- Guide -->
+<div class="guide" id="guideBox"></div>
+
+<!-- FORM -->
+<div class="panel pg" id="formPanel">
+  <div class="pt">
+    INPUT PARAMETERS
+    <span class="bdg bg" id="fBadge">▲ BOTTOM — RISE WHEEL</span>
+    <span style="flex:1"></span>
+    <span style="font-size:7px;color:#2a4a3a">* REQUIRED</span>
+  </div>
+
+  <!-- Presets -->
+  <div style="margin-bottom:8px">
+    <div style="font-size:7px;color:#4a7a6a;letter-spacing:1.5px;font-family:'Chakra Petch',sans-serif;margin-bottom:4px">QUICK LOAD</div>
+    <div class="pr-row">
+      <button class="pb" onclick="loadP('NABIL','Banking',680,820,750)">NABIL</button>
+      <button class="pb" onclick="loadP('NICA','Insurance',560,670,615)">NICA</button>
+      <button class="pb" onclick="loadP('HRL','Hydropower',180,225,200)">HRL</button>
+      <button class="pb" onclick="loadP('NRIC','Insurance',1100,1280,1190)">NRIC</button>
+      <button class="pb" onclick="loadP('UPPER','Hydropower',155,195,172)">UPPER</button>
+      <button class="pb" onclick="loadP('NHPC','Hydropower',58,72,65)">NHPC</button>
+      <button class="pb" onclick="loadP('GBIME','Banking',245,298,268)">GBIME</button>
+      <button class="pb" onclick="loadP('NLG','Insurance',1950,2180,2060)">NLG</button>
+    </div>
+  </div>
+
+  <!-- Row 1: Identity -->
+  <div class="fg g4" style="margin-bottom:8px">
+    <div class="ig i-amb">
+      <label>Scrip Name *</label>
+      <input type="text" id="scrip" placeholder="e.g. NABIL" maxlength="10">
+    </div>
+    <div class="ig">
+      <label>Sector</label>
+      <select id="sector">
+        <option value="">— Select —</option>
+        <option>Banking</option><option>Hydropower</option><option>Finance</option>
+        <option>Microfinance</option><option>Insurance</option><option>Manufacturing</option>
+        <option>Hotels</option><option>Trading</option><option>Others</option>
+      </select>
+    </div>
+    <div class="ig">
+      <label>Timeframe</label>
+      <select id="tf">
+        <option>Daily</option><option>Weekly</option><option>Monthly</option><option>Intraday</option>
+      </select>
+    </div>
+    <div class="ig">
+      <label>Scale Method</label>
+      <select id="scaleM">
+        <option value="sqrt">√ Square Root (Gann)</option>
+        <option value="mhl">MHL Based</option>
+        <option value="direct">Direct %</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Row 2: Prices -->
+  <div class="fg g5" style="margin-bottom:8px">
+    <div class="ig i-red">
+      <label>Swing Low *</label>
+      <input type="number" id="swLow" placeholder="e.g. 517" step="0.01" oninput="autoMHL()">
+      <div class="tip">Recent pivot low</div>
+    </div>
+    <div class="ig i-red">
+      <label>Swing High *</label>
+      <input type="number" id="swHigh" placeholder="e.g. 577" step="0.01" oninput="autoMHL()">
+      <div class="tip">Recent pivot high</div>
+    </div>
+    <div class="ig">
+      <label>Current Price *</label>
+      <input type="number" id="curP" placeholder="live price" step="0.01" oninput="liveUpdate()">
+      <div class="tip">Last traded price</div>
+    </div>
+    <div class="ig i-mhl">
+      <label>MHL (Auto) ★</label>
+      <input type="number" id="mhlVal" placeholder="auto-calculates" step="0.01" readonly class="mhl-live">
+      <div class="auto-lbl">▸ HIGH − LOW = MHL</div>
+    </div>
+    <div class="ig">
+      <label>Rings</label>
+      <select id="rings">
+        <option value="3">3 Rings</option>
+        <option value="4">4 Rings</option>
+        <option value="5">5 Rings</option>
+        <option value="2">2 Rings</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- PRO: extra inputs + angle pills -->
+  <div id="proInputs" style="display:none">
+    <div class="fg g3" style="margin-bottom:8px">
+      <div class="ig">
+        <label>52W High</label>
+        <input type="number" id="w52h" placeholder="optional" style="color:#e05c5c;border-color:rgba(224,92,92,0.18)">
+      </div>
+      <div class="ig">
+        <label>52W Low</label>
+        <input type="number" id="w52l" placeholder="optional" style="color:#64c8a0;border-color:rgba(100,200,160,0.18)">
+      </div>
+      <div class="ig">
+        <label>Open Price</label>
+        <input type="number" id="openP" placeholder="optional" style="color:#c8d6e0">
+      </div>
+    </div>
+    <div style="margin-bottom:8px">
+      <div style="font-size:7px;color:#4a7a6a;letter-spacing:1.5px;font-family:'Chakra Petch',sans-serif;margin-bottom:4px">GANN ANGLES</div>
+      <div id="anglePills">
+        <span class="apill pw on" data-a="315">315° ★ POWER</span>
+        <span class="apill on" data-a="45">45° 1×1</span>
+        <span class="apill on" data-a="0">0°</span>
+        <span class="apill" data-a="60">60°</span>
+        <span class="apill" data-a="90">90°</span>
+        <span class="apill" data-a="120">120°</span>
+        <span class="apill on" data-a="180">180°</span>
+        <span class="apill" data-a="240">240°</span>
+        <span class="apill" data-a="300">300°</span>
+        <span class="apill" data-a="63.75">63.75° 1×2</span>
+        <span class="apill" data-a="26.25">26.25° 2×1</span>
+        <span class="apill" data-a="75">75° 1×4</span>
+        <span class="apill" data-a="15">15° 4×1</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="btn-row">
+    <button class="btn bn-g" id="calcBtn" onclick="calculate()">▶ CALCULATE</button>
+    <button class="btn bn-a" onclick="calculate()">⟳ UPDATE</button>
+    <button class="btn bn-h" onclick="clearForm()">✕ CLEAR</button>
+  </div>
+
+  <div class="sbar">
+    <div class="sdot" id="sdot"></div>
+    <span id="statusMsg">Enter Swing Low + High → MHL auto-fires → press Calculate</span>
+  </div>
+</div>
+
+<!-- OUTPUT -->
+<div id="outputArea" style="display:none">
+
+  <!-- MHL display bar -->
+  <div class="mhl-display" id="mhlBar">
+    <div>
+      <div class="ml">MHL (MAXIMUM HIGH LOW)</div>
+      <div class="mv" id="oMHL">—</div>
+    </div>
+    <div style="margin-left:20px">
+      <div class="ml">FORMULA</div>
+      <div style="font-size:11px;color:#6a4a8a;font-family:'Share Tech Mono',monospace" id="oMHLFormula">H − L = MHL</div>
+    </div>
+    <div style="margin-left:20px">
+      <div class="ml">√ MHL</div>
+      <div style="font-size:16px;font-weight:700;font-family:'Chakra Petch',sans-serif;color:#8a64c8" id="oSqMHL">—</div>
+    </div>
+    <div class="mf">
+      <div class="ml">SCALE</div>
+      <div style="font-size:11px;color:#4a6a5a;font-family:'Chakra Petch',sans-serif" id="oScale">—</div>
+    </div>
+  </div>
+
+  <!-- Scrip title bar -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 14px;background:rgba(10,20,25,0.88);border:1px solid rgba(240,180,41,0.2);border-radius:4px;flex-wrap:wrap">
+    <span style="font-family:'Chakra Petch',sans-serif;font-size:18px;font-weight:700;color:#f0b429" id="oScrip">—</span>
+    <span class="bdg ba" id="oSector">—</span>
+    <span class="bdg bc" id="oTF">—</span>
+    <span class="bdg" id="oModeBdg">▲ BOTTOM</span>
+    <span style="flex:1"></span>
+    <span style="font-size:9px;color:#4a7a6a">LOW <span id="oLow" style="color:#e05c5c">—</span></span>
+    <span style="font-size:9px;color:#4a7a6a">HIGH <span id="oHigh" style="color:#64c8a0">—</span></span>
+    <span style="font-size:9px;color:#4a7a6a">CUR <span id="oCur" style="color:#c8d6e0">—</span></span>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="stat-row g5" style="margin-bottom:10px" id="statCards"></div>
+
+  <!-- Dual panel: rise | fall -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+    <div class="panel pg" id="risePanel">
+      <div class="pt">RISE TARGETS <span class="bdg bg">▲ m-LEVELS</span> <span style="flex:1"></span> <span class="bdg" id="rStatusBdg">● ACTIVE</span></div>
+      <div id="riseContent"></div>
+    </div>
+    <div class="panel" id="fallPanel">
+      <div class="pt">FALL TARGETS <span class="bdg br">▼ f-LEVELS</span> <span style="flex:1"></span> <span class="bdg" id="fStatusBdg">○ INACTIVE</span></div>
+      <div id="fallContent"></div>
+    </div>
+  </div>
+
+  <!-- 315° Power Spoke — always shown -->
+  <div class="panel" style="border-color:rgba(240,180,41,0.25)">
+    <div class="pt">315° POWER SPOKE <span class="bdg ba">★ HIGHEST PROBABILITY ZONES</span></div>
+    <div style="font-size:8px;color:#4a7a6a;margin-bottom:6px;font-family:'Chakra Petch',sans-serif;letter-spacing:1px" id="spokeDesc"></div>
+    <div class="spoke-grid" id="spokeGrid"></div>
+    <div style="margin-top:8px;font-size:8px;color:#2a5a3a;font-family:'Chakra Petch',sans-serif;line-height:1.8" id="spokeNote"></div>
+  </div>
+
+  <!-- MHL Cycle levels — always shown -->
+  <div class="panel" style="margin-top:10px">
+    <div class="pt">MHL CYCLE LEVELS <span class="bdg bpu">AUTO FROM MHL</span></div>
+    <div class="cycle-grid" id="cycleGrid"></div>
+    <div style="margin-top:8px;font-size:8px;color:#2a5a3a;font-family:'Chakra Petch',sans-serif" id="cycleNote"></div>
+  </div>
+
+  <!-- PRO only -->
+  <div id="proOutput" style="display:none;margin-top:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="panel">
+        <div class="pt">CARDINAL CROSS <span class="bdg bc">PRO</span></div>
+        <div id="cardinalOut"></div>
+      </div>
+      <div class="panel">
+        <div class="pt">√ PRICE ANALYSIS <span class="bdg bc">PRO</span></div>
+        <div id="sqrtOut"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="pt">GANN HEXAGON WHEEL <span class="bdg ba">PRO · VISUAL</span></div>
+      <canvas id="hexCanvas" width="900" height="340"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer-brand">▸ TRADE WITH VIBES</div>
+</div>
+
+<script>
+let MODE='bottom', LEVEL='novice';
+let D={};
+
+// Clock
+function tick(){document.getElementById('clk').textContent=new Date().toISOString().replace('T',' ').slice(0,19)+' UTC'}
+tick();setInterval(tick,1000);
+
+// Angle pills
+document.querySelectorAll('.apill').forEach(p=>p.onclick=()=>p.classList.toggle('on'));
+
+// ── AUTO MHL ──────────────────────────────────────────────
+function autoMHL(){
+  const lo=parseFloat(document.getElementById('swLow').value)||0;
+  const hi=parseFloat(document.getElementById('swHigh').value)||0;
+  const mhl=document.getElementById('mhlVal');
+  if(lo>0 && hi>0 && hi>lo){
+    const val=(hi-lo);
+    mhl.value=val.toFixed(2);
+    setStatus(true,`MHL auto-calculated: ${hi.toFixed(2)} − ${lo.toFixed(2)} = ${val.toFixed(2)}`,'p');
+    // auto-trigger if curP also filled
+    if(document.getElementById('curP').value) liveUpdate();
+  } else {
+    mhl.value='';
+    setStatus(false,'Enter Swing Low + Swing High → MHL auto-fires');
+  }
+}
+
+function liveUpdate(){
+  if(document.getElementById('outputArea').style.display!=='none') renderOutput();
+}
+
+// ── MODE ─────────────────────────────────────────────────
+function setMode(m){
+  MODE=m;
+  const isB=m==='bottom';
+  document.getElementById('btnB').className='tb-btn bottom'+(isB?' ab':'');
+  document.getElementById('btnT').className='tb-btn top'+(!isB?' at':'');
+  document.getElementById('modePill').className='mode-pill '+(isB?'pill-b':'pill-t');
+  document.getElementById('modePill').textContent=isB?'▲ BOTTOM — RISE ACTIVE':'▼ TOP — FALL ACTIVE';
+  document.getElementById('mTag').textContent=isB?'BOTTOM':'TOP';
+  document.getElementById('mTag').style.color=isB?'#64c8a0':'#e05c5c';
+  document.getElementById('formPanel').className='panel '+(isB?'pg':'pr');
+  document.getElementById('fBadge').textContent=isB?'▲ BOTTOM — RISE WHEEL':'▼ TOP — FALL WHEEL';
+  document.getElementById('fBadge').className='bdg '+(isB?'bg':'br');
+  document.getElementById('calcBtn').className='btn '+(isB?'bn-g':'bn-r');
+  updateGuide();
+  if(document.getElementById('outputArea').style.display!=='none') renderOutput();
+}
+
+// ── LEVEL ────────────────────────────────────────────────
+function setLevel(l){
+  LEVEL=l;
+  const isN=l==='novice';
+  document.getElementById('btnN').className='np-btn'+(isN?' an':'');
+  document.getElementById('btnP').className='np-btn'+(!isN?' ap':'');
+  document.getElementById('lTag').textContent=l.toUpperCase();
+  document.getElementById('lTag').style.color=isN?'#00d4e8':'#f0b429';
+  document.getElementById('proInputs').style.display=isN?'none':'block';
+  document.getElementById('proOutput').style.display=isN?'none':'block';
+  updateGuide();
+  if(document.getElementById('outputArea').style.display!=='none') renderOutput();
+}
+
+function updateGuide(){
+  const g=document.getElementById('guideBox');
+  if(LEVEL==='pro'){g.style.display='none';return;}
+  g.style.display='block';
+  const isB=MODE==='bottom';
+  g.innerHTML=isB
+    ?`<strong>▲ BOTTOM MODE</strong> — Enter the recent <strong>swing Low</strong> and <strong>swing High</strong>.
+      MHL auto-calculates instantly. Rise targets (m1→m3) appear above current price.
+      Fall side is <strong>dimmed</strong> — switch to <strong>TOP mode</strong> at a swing high to see fall targets.`
+    :`<strong>▼ TOP MODE</strong> — Enter the recent <strong>swing High</strong> and <strong>swing Low</strong>.
+      MHL auto-calculates instantly. Fall targets (f1→f3) appear below current price.
+      Rise side is <strong>dimmed</strong> — switch to <strong>BOTTOM mode</strong> at a swing low to see rise targets.`;
+}
+
+function setStatus(on,msg,col){
+  const d=document.getElementById('sdot');
+  d.className='sdot'+(on?(' on'+(col==='r'?' on-r':col==='p'?' on-p':'')):'');
+  document.getElementById('statusMsg').textContent=msg;
+}
+
+// ── MATH ─────────────────────────────────────────────────
+function getTarget(base,mhl,step,method,dir){
+  // dir: 1 = rise, -1 = fall
+  const s=step*dir;
+  if(method==='sqrt') return Math.pow(Math.sqrt(base)+s,2);
+  if(method==='mhl')  return base+mhl*step*dir;
+  return base*(1+step*0.1*dir);
+}
+
+function get315Spoke(base,mhl,rings,method){
+  // Real 315° sequence: 1,8,21,40,65,96,133...
+  // Differences: +7,+13,+19,+25,+31... (+6 each time)
+  const seq=[1];let n=1,inc=7;
+  for(let i=1;i<=rings+2;i++){n+=inc;inc+=6;seq.push(n);}
+  return seq.map((n,i)=>({
+    ring:i,n,
+    price:method==='sqrt'
+      ?Math.pow(Math.sqrt(base)+(n-1)*0.5,2)
+      :method==='mhl'
+      ?base+mhl*(n-1)*0.15
+      :base*(1+(n-1)*0.06)
+  }));
+}
+
+// ── CALCULATE ────────────────────────────────────────────
+function calculate(){
+  const scrip=(document.getElementById('scrip').value||'SCRIP').toUpperCase();
+  const lo=parseFloat(document.getElementById('swLow').value)||0;
+  const hi=parseFloat(document.getElementById('swHigh').value)||0;
+  const cur=parseFloat(document.getElementById('curP').value)||0;
+  const mhl=parseFloat(document.getElementById('mhlVal').value)||0;
+  const method=document.getElementById('scaleM').value;
+  const rings=parseInt(document.getElementById('rings').value)||3;
+  const sector=document.getElementById('sector').value||'—';
+  const tf=document.getElementById('tf').value;
+  const isB=MODE==='bottom';
+  const base=isB?lo:hi;
+
+  if(!lo||!hi){setStatus(false,'⚠ Enter Swing Low and Swing High');return;}
+  if(hi<=lo){setStatus(false,'⚠ Swing High must be greater than Swing Low');return;}
+
+  D={scrip,lo,hi,cur,mhl,method,rings,sector,tf,isB,base};
+  renderOutput();
+  document.getElementById('outputArea').style.display='block';
+  setStatus(true,`${scrip} · ${isB?'Bottom Rise':'Top Fall'} · MHL ${mhl.toFixed(2)} · ${method} scale · 315° active`,'g');
+}
+
+function renderOutput(){
+  const {scrip,lo,hi,cur,mhl,method,rings,sector,tf,isB,base}=D;
+  if(!base) return;
+
+  // MHL bar
+  document.getElementById('oMHL').textContent=mhl.toFixed(2);
+  document.getElementById('oMHLFormula').textContent=`${hi.toFixed(2)} − ${lo.toFixed(2)} = ${mhl.toFixed(2)}`;
+  document.getElementById('oSqMHL').textContent=Math.sqrt(mhl).toFixed(3);
+  document.getElementById('oScale').textContent=method==='sqrt'?'√ GANN':method==='mhl'?'MHL':'DIRECT';
+
+  // Scrip bar
+  document.getElementById('oScrip').textContent=scrip;
+  document.getElementById('oSector').textContent=sector;
+  document.getElementById('oTF').textContent=tf;
+  document.getElementById('oLow').textContent=lo.toFixed(2);
+  document.getElementById('oHigh').textContent=hi.toFixed(2);
+  document.getElementById('oCur').textContent=cur?cur.toFixed(2):'—';
+  const ob=document.getElementById('oModeBdg');
+  ob.textContent=isB?'▲ BOTTOM':'▼ TOP';
+  ob.style.color=isB?'#64c8a0':'#e05c5c';
+  ob.style.background=isB?'rgba(100,200,160,0.1)':'rgba(224,92,92,0.1)';
+  ob.style.borderColor=isB?'rgba(100,200,160,0.25)':'rgba(224,92,92,0.25)';
+
+  // Stat cards
+  const pctCur=cur&&base?((cur-base)/base*100):null;
+  const distMHL=cur&&mhl?((cur-base)/mhl).toFixed(2):null;
+  document.getElementById('statCards').innerHTML=[
+    {lb:'Base Price',   vl:base.toFixed(2),  cls:'va'},
+    {lb:'√ Base',       vl:Math.sqrt(base).toFixed(3), cls:'vb'},
+    {lb:'MHL',          vl:mhl.toFixed(2),   cls:'vpu'},
+    {lb:'Current',      vl:cur?cur.toFixed(2):'—', cls:cur>=base?'vc':'vr'},
+    {lb:'% from Base',  vl:pctCur!==null?(pctCur>=0?'+':'')+pctCur.toFixed(1)+'%':'—', cls:pctCur>=0?'vc':'vr'},
+  ].map(s=>`<div class="sc"><div class="lb">${s.lb}</div><div class="vl ${s.cls}">${s.vl}</div></div>`).join('');
+
+  // Rise & Fall targets
+  const steps=[1,2,3,4,5,6];
+  const rL=['m1','m2','m3','m4','m5','m6'];
+  const fL=['f1','f2','f3','f4','f5','f6'];
+  const rC=['#64c8a0','#64c8a0','#f0b429','#f0b429','#e05c5c','#e05c5c'];
+  const rB=['bg','bg','ba','ba','br','br'];
+
+  const makeTRow=(label,price,color,badge,cur,dir)=>{
+    const dist=cur?(price-cur)*dir:null;
+    const pct=cur?((price-cur)/cur*100):null;
+    const is315=false;
+    return `<div class="trow">
+      <span style="font-size:9px;color:#4a7a6a;font-family:'Chakra Petch',sans-serif;letter-spacing:1px;min-width:26px">${label}</span>
+      <span class="tval" style="color:${color}">${price.toFixed(2)}</span>
+      ${pct!==null?`<span class="tpct">${dist>=0?'+':''}${Math.abs(dist).toFixed(0)}pts<br>${pct>=0?'+':''}${pct.toFixed(1)}%</span>`:''}
+      <span class="bdg ${badge}">TGT</span>
+    </div>`;
+  };
+
+  const riseHTML=steps.slice(0,rings).map((s,i)=>{
+    const p=getTarget(base,mhl,s,method,1);
+    return makeTRow(rL[i],p,rC[i],rB[i],cur,1);
+  }).join('');
+
+  const fallHTML=steps.slice(0,rings).map((s,i)=>{
+    const p=getTarget(base,mhl,s,method,-1);
+    if(p<=0) return '';
+    return makeTRow(fL[i],p,'#e05c5c','br',cur,-1);
+  }).join('');
+
+  // Active / inactive panels
+  const rp=document.getElementById('risePanel');
+  const fp=document.getElementById('fallPanel');
+  const rsb=document.getElementById('rStatusBdg');
+  const fsb=document.getElementById('fStatusBdg');
+
+  if(isB){
+    rp.className='panel pg';
+    fp.className='panel dimmed';
+    rsb.textContent='● ACTIVE'; rsb.style.color='#64c8a0'; rsb.style.background='rgba(100,200,160,0.1)'; rsb.style.borderColor='rgba(100,200,160,0.3)';
+    fsb.textContent='○ INACTIVE'; fsb.style.color='#2a4a3a'; fsb.style.background='transparent'; fsb.style.borderColor='rgba(100,200,160,0.1)';
+    document.getElementById('riseContent').innerHTML=riseHTML;
+    document.getElementById('fallContent').innerHTML=`<div class="inact">▼ Switch to TOP mode<br>to activate fall targets</div>`;
+  } else {
+    rp.className='panel dimmed';
+    fp.className='panel pr';
+    rsb.textContent='○ INACTIVE'; rsb.style.color='#2a4a3a'; rsb.style.background='transparent'; rsb.style.borderColor='rgba(100,200,160,0.1)';
+    fsb.textContent='● ACTIVE'; fsb.style.color='#e05c5c'; fsb.style.background='rgba(224,92,92,0.08)'; fsb.style.borderColor='rgba(224,92,92,0.3)';
+    document.getElementById('riseContent').innerHTML=`<div class="inact">▲ Switch to BOTTOM mode<br>to activate rise targets</div>`;
+    document.getElementById('fallContent').innerHTML=fallHTML;
+  }
+
+  // 315° Power Spoke
+  const spoke=get315Spoke(base,mhl,rings,method);
+  document.getElementById('spokeDesc').textContent=
+    `Base ${base.toFixed(2)} · MHL ${mhl.toFixed(2)} · 315° hidden spoke — where smart money acts`;
+  document.getElementById('spokeGrid').innerHTML=spoke.map((s,i)=>{
+    const near=cur&&Math.abs(s.price-cur)<s.price*0.018;
+    const pct=cur?((s.price-cur)/cur*100).toFixed(1):null;
+    return `<div class="sc315${near?' match':''}">
+      <span class="sr">Ring ${s.ring}</span>
+      <span class="sv2">${s.price.toFixed(1)}</span>
+      <span class="sn">n = ${s.n}</span>
+      ${pct!==null?`<span style="font-size:7px;color:${s.price>cur?'#64c8a0':'#e05c5c'}">${pct>0?'+':''}${pct}%</span>`:''}
+      ${near?'<span style="font-size:7px;color:#f0b429;font-family:Chakra Petch,sans-serif;margin-top:1px">★ NEAR</span>':''}
+    </div>`;
+  }).join('');
+  document.getElementById('spokeNote').innerHTML=
+    `<span style="color:#4a7a6a">Sequence: </span><span style="color:#f0b429">${spoke.map(s=>s.n).join(' → ')}</span>
+     <span style="color:#2a5a3a"> · Differences: +7, +13, +19, +25, +31... (each step +6)</span>`;
+
+  // MHL Cycles
+  const mults=[4.71,9.42,14.13,18.75,23.46,28.17,35.14];
+  const mNames=['×4.71','×9.42','×14.13','×18.75','×23.46','×28.17','×35.14'];
+  document.getElementById('cycleGrid').innerHTML=mults.map((m,i)=>{
+    const p=base+mhl*m;
+    const near=cur&&Math.abs(p-cur)<p*0.015;
+    const dist=cur?(p-cur).toFixed(0):null;
+    return `<div class="cc${near?' match':''}">
+      <div class="cm">${mNames[i]}</div>
+      <div class="cv">${p.toFixed(1)}</div>
+      <div class="cd">${dist!==null?(dist>0?'+':'')+dist+'pts':'MHL×'+m}</div>
+      ${near?'<span style="font-size:7px;color:#f0b429;font-family:Chakra Petch,sans-serif">★ NEAR</span>':''}
+    </div>`;
+  }).join('');
+  document.getElementById('cycleNote').textContent=
+    `MHL ${mhl.toFixed(2)} × standard Gann multipliers from base ${base.toFixed(2)}`;
+
+  // PRO outputs
+  if(LEVEL==='pro'){
+    // Cardinal cross
+    const cardDeg=[0,45,60,90,120,180,240,270,300,315];
+    const cardL=['0°','45° 1×1','60°','90°','120°','180°','240°','270°','300°','315° ★'];
+    document.getElementById('cardinalOut').innerHTML=cardDeg.map((d,i)=>{
+      const p=method==='sqrt'?Math.pow(Math.sqrt(base)+d/90,2):base*(1+d/360*0.5);
+      const is315=d===315;
+      const near=cur&&Math.abs(p-cur)<p*0.015;
+      return `<div class="trow">
+        <span style="font-size:8px;color:${is315?'#f0b429':near?'#64c8a0':'#4a7a6a'};font-family:'Chakra Petch',sans-serif">${cardL[i]}</span>
+        <span style="font-size:13px;font-weight:700;font-family:'Chakra Petch',sans-serif;color:${is315?'#f0b429':near?'#64c8a0':'#64c8a0'}">${p.toFixed(2)}</span>
+        ${is315?'<span class="bdg ba">★ POWER</span>':near?'<span class="bdg bg">NEAR</span>':''}
+      </div>`;
+    }).join('');
+
+    // √ analysis
+    const sqBase=Math.sqrt(base);
+    const sqHi=Math.sqrt(hi);
+    const sqLo=Math.sqrt(lo);
+    const sqMHL=Math.sqrt(mhl);
+    document.getElementById('sqrtOut').innerHTML=`
+      <div class="trow"><span class="sc" style="padding:3px;flex:1;text-align:left"><div class="lb">√ Base</div><div style="font-size:14px;font-weight:700;color:#4ab4ff;font-family:'Chakra Petch',sans-serif">${sqBase.toFixed(4)}</div></span></div>
+      <div class="trow"><span class="sc" style="padding:3px;flex:1;text-align:left"><div class="lb">√ High</div><div style="font-size:14px;font-weight:700;color:#e05c5c;font-family:'Chakra Petch',sans-serif">${sqHi.toFixed(4)}</div></span></div>
+      <div class="trow"><span class="sc" style="padding:3px;flex:1;text-align:left"><div class="lb">√ Low</div><div style="font-size:14px;font-weight:700;color:#64c8a0;font-family:'Chakra Petch',sans-serif">${sqLo.toFixed(4)}</div></span></div>
+      <div class="trow"><span class="sc" style="padding:3px;flex:1;text-align:left"><div class="lb">√ MHL</div><div style="font-size:14px;font-weight:700;color:#c864ff;font-family:'Chakra Petch',sans-serif">${sqMHL.toFixed(4)}</div></span></div>
+      <div class="trow"><span class="sc" style="padding:3px;flex:1;text-align:left"><div class="lb">√High − √Low</div><div style="font-size:14px;font-weight:700;color:#f0b429;font-family:'Chakra Petch',sans-serif">${(sqHi-sqLo).toFixed(4)}</div></span></div>
+    `;
+
+    // Hex visual
+    drawHex();
+  }
+}
+
+// ── HEX VISUAL ──────────────────────────────────────────
+function drawHex(){
+  const canvas=document.getElementById('hexCanvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='rgba(6,15,19,0.7)';
+  ctx.fillRect(0,0,W,H);
+
+  const {base,mhl,method,rings,cur,scrip,isB}=D;
+  const cx=W/2,cy=H/2;
+  const maxR=Math.min(W,H)*0.44;
+
+  // Rings
+  for(let r=0;r<=rings;r++){
+    const rad=(r/rings)*maxR;
+    ctx.beginPath();
+    for(let k=0;k<6;k++){
+      const a=(k/6)*Math.PI*2-Math.PI/2;
+      const x=cx+Math.cos(a)*rad, y=cy+Math.sin(a)*rad;
+      k===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle=`rgba(100,200,160,${0.04+r*0.05})`;
+    ctx.lineWidth=0.8; ctx.stroke();
+
+    if(r>0){
+      const p=getTarget(base,mhl,r,method,1);
+      ctx.fillStyle='rgba(100,200,160,0.45)';
+      ctx.font='9px Share Tech Mono';
+      ctx.textAlign='center';
+      ctx.fillText(p.toFixed(0),cx,cy-rad*0.98+5);
+      // Fall ring
+      const pf=getTarget(base,mhl,r,method,-1);
+      if(pf>0){
+        ctx.fillStyle='rgba(224,92,92,0.4)';
+        ctx.fillText(pf.toFixed(0),cx,cy+rad*0.98-3);
+      }
+    }
+  }
+
+  // Cardinal spokes
+  for(let k=0;k<6;k++){
+    const a=(k/6)*Math.PI*2-Math.PI/2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(a)*maxR,cy+Math.sin(a)*maxR);
+    ctx.strokeStyle='rgba(100,200,160,0.07)';
+    ctx.setLineDash([3,7]);ctx.lineWidth=0.6;ctx.stroke();ctx.setLineDash([]);
+  }
+
+  // 315° GOLD spoke
+  const a315=(315/360)*Math.PI*2-Math.PI/2;
+  ctx.beginPath();
+  ctx.moveTo(cx,cy);
+  ctx.lineTo(cx+Math.cos(a315)*maxR,cy+Math.sin(a315)*maxR);
+  ctx.strokeStyle='rgba(240,180,41,0.7)';ctx.lineWidth=2;
+  ctx.setLineDash([5,4]);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#f0b429';
+  ctx.font='bold 9px Chakra Petch';
+  ctx.textAlign='center';
+  ctx.fillText('315° ★',cx+Math.cos(a315)*maxR*0.82,cy+Math.sin(a315)*maxR*0.82);
+
+  // 45° 1×1 cyan
+  const a45=(45/360)*Math.PI*2-Math.PI/2;
+  ctx.beginPath();ctx.moveTo(cx,cy);
+  ctx.lineTo(cx+Math.cos(a45)*maxR,cy+Math.sin(a45)*maxR);
+  ctx.strokeStyle='rgba(0,212,232,0.25)';ctx.lineWidth=0.8;
+  ctx.setLineDash([2,5]);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='rgba(0,212,232,0.5)';
+  ctx.font='8px Share Tech Mono';
+  ctx.fillText('1×1',cx+Math.cos(a45)*maxR*0.75,cy+Math.sin(a45)*maxR*0.75);
+
+  // Rise direction indicator (top)
+  ctx.fillStyle='rgba(100,200,160,0.25)';
+  ctx.font='8px Chakra Petch';
+  ctx.textAlign='center';
+  ctx.fillText('▲ RISE',cx,cy-maxR-8);
+  ctx.fillStyle='rgba(224,92,92,0.25)';
+  ctx.fillText('▼ FALL',cx,cy+maxR+14);
+
+  // Active side highlight arc
+  const arcColor=isB?'rgba(100,200,160,0.12)':'rgba(224,92,92,0.12)';
+  ctx.beginPath();
+  ctx.arc(cx,cy,maxR+4,isB?-Math.PI:0,isB?0:Math.PI);
+  ctx.strokeStyle=arcColor;ctx.lineWidth=3;ctx.stroke();
+
+  // Center
+  ctx.beginPath();ctx.arc(cx,cy,20,0,Math.PI*2);
+  ctx.fillStyle='rgba(240,180,41,0.12)';ctx.fill();
+  ctx.strokeStyle='rgba(240,180,41,0.5)';ctx.lineWidth=1;ctx.stroke();
+  ctx.fillStyle='#f0b429';ctx.font='bold 10px Chakra Petch';ctx.textAlign='center';
+  ctx.fillText(scrip,cx,cy-3);
+  ctx.fillStyle='#64c8a0';ctx.font='9px Share Tech Mono';
+  ctx.fillText(base.toFixed(0),cx,cy+9);
+
+  // Current price dot
+  if(cur&&base&&mhl){
+    const maxTgt=getTarget(base,mhl,rings,method,1);
+    const minTgt=getTarget(base,mhl,rings,method,-1);
+    let dotR,dotA;
+    if(cur>=base){
+      const pct=Math.min((cur-base)/(maxTgt-base),1);
+      dotR=pct*maxR; dotA=-Math.PI/2;
+    } else {
+      const pct=Math.min((base-cur)/(base-Math.max(minTgt,1)),1);
+      dotR=pct*maxR; dotA=Math.PI/2;
+    }
+    const dx=cx+Math.cos(dotA)*dotR;
+    const dy=cy+Math.sin(dotA)*dotR;
+    ctx.beginPath();ctx.arc(dx,dy,6,0,Math.PI*2);
+    ctx.fillStyle=cur>=base?'#64c8a0':'#e05c5c';ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 8px Share Tech Mono';ctx.textAlign='center';
+    ctx.fillText(cur.toFixed(0),dx,dy+3);
+    // label
+    ctx.fillStyle=cur>=base?'rgba(100,200,160,0.7)':'rgba(224,92,92,0.7)';
+    ctx.font='8px Chakra Petch';
+    ctx.fillText('● CUR',dx+20,dy);
+  }
+}
+
+// ── PRESET LOADER ────────────────────────────────────────
+function loadP(scrip,sector,lo,hi,cur){
+  document.getElementById('scrip').value=scrip;
+  document.getElementById('sector').value=sector;
+  document.getElementById('swLow').value=lo;
+  document.getElementById('swHigh').value=hi;
+  document.getElementById('curP').value=cur;
+  autoMHL();
+  setStatus(true,`${scrip} loaded — MHL auto-calculated — press Calculate`,'p');
+}
+
+// ── CLEAR ─────────────────────────────────────────────────
+function clearForm(){
+  ['scrip','swLow','swHigh','curP','mhlVal','w52h','w52l','openP'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  document.getElementById('outputArea').style.display='none';
+  setStatus(false,'Form cleared — ready for new input');
+}
+
+// ── INIT ─────────────────────────────────────────────────
+updateGuide();
+setLevel('novice');
+setMode('bottom');
+</script>
+</body>
+</html>

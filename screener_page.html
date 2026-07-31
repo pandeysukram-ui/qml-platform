@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>NEPSE Screener — Trade With Vibes</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Share+Tech+Mono&display=swap');
+
+:root{
+  --color-background-primary:#0a1220;
+  --color-background-secondary:#0f1b2e;
+  --color-background-info:#132a3f;
+  --color-text-primary:#dce6f0;
+  --color-text-secondary:#7c93ab;
+  --color-text-tertiary:#4a6178;
+  --color-text-info:#7ec8f7;
+  --color-border-secondary:#1e3350;
+  --color-border-tertiary:#182840;
+  --border-radius-md:6px;
+  --border-radius-lg:10px;
+  --font-sans:'Chakra Petch',sans-serif;
+}
+
+body{background:var(--color-background-primary);margin:0;padding:0 10px;}
+</style>
+</head>
+<body>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+#app{padding:.75rem 0;font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;gap:7px;margin-bottom:.75rem;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:7px;padding:5px 10px;background:#0a1628;border-radius:var(--border-radius-md);flex-shrink:0}
+.logo span{color:#fff;font-size:11px;font-weight:600;letter-spacing:.06em}
+.logo i{color:#e8b84b;font-size:14px}
+.qml-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;background:linear-gradient(135deg,#1a3a5c,#0d5c8f);border-radius:var(--border-radius-md);font-size:11px;color:#7ec8f7;font-weight:500;cursor:pointer;border:0.5px solid #1e5a8a;text-decoration:none;flex-shrink:0;transition:opacity .15s}
+.qml-btn:hover{opacity:.85}
+.qml-btn i{font-size:12px}
+.sw{flex:1;min-width:120px;display:flex;align-items:center;gap:7px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:6px 10px}
+.sw input{flex:1;border:none;outline:none;background:transparent;font-size:12px;color:var(--color-text-primary)}
+.sw input::placeholder{color:var(--color-text-tertiary)}
+.filters{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.6rem}
+.fg{display:flex;align-items:center;gap:3px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:4px 8px;font-size:10px;color:var(--color-text-secondary)}
+.fg select{border:none;outline:none;background:transparent;font-size:10px;color:var(--color-text-primary);cursor:pointer;-webkit-appearance:none;appearance:none;font-family:var(--font-sans);max-width:125px}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:.45rem}
+.chip{display:inline-flex;align-items:center;gap:3px;background:var(--color-background-info);color:var(--color-text-info);border-radius:999px;font-size:9px;padding:2px 7px;font-weight:500}
+.chip button{border:none;background:none;cursor:pointer;color:inherit;font-size:11px;line-height:1;padding:0}
+.rh{display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem}
+.rh span{font-size:10px;color:var(--color-text-secondary)}
+.ss{border:none;outline:none;background:transparent;font-size:10px;color:var(--color-text-secondary);cursor:pointer;font-family:var(--font-sans)}
+.sm{display:flex;gap:8px;margin-bottom:.6rem;flex-wrap:wrap}
+.smc{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.35rem .7rem}
+.smc .sv{font-size:14px;font-weight:500;color:var(--color-text-primary)}
+.smc .sl{color:var(--color-text-secondary);font-size:9px}
+.tw{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead tr{background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)}
+th{padding:6px 7px;font-size:9px;font-weight:500;color:var(--color-text-secondary);text-align:left;cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{color:var(--color-text-primary)}
+th:nth-child(1){width:13%}th:nth-child(2){width:9%}th:nth-child(3){width:8%}th:nth-child(4){width:8%}th:nth-child(5){width:15%}th:nth-child(6){width:7%}th:nth-child(7){width:7%}th:nth-child(8){width:7%}th:nth-child(9){width:26%}
+td{padding:6px 7px;font-size:10px;color:var(--color-text-primary);border-bottom:0.5px solid var(--color-border-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--color-background-secondary)}
+.sym{font-weight:600;font-size:10px;letter-spacing:.03em}
+.pos{color:#1D9E75;font-weight:500}.neg{color:#D85A30;font-weight:500}.neu{color:var(--color-text-tertiary)}
+.bdg{display:inline-block;padding:1px 5px;border-radius:999px;font-size:8px;font-weight:500}
+.bw{background:var(--color-background-secondary);border-radius:2px;height:3px;width:100%;margin-top:2px;overflow:hidden}
+.bf{height:3px;border-radius:2px}
+.pbv{display:inline-block;padding:1px 4px;border-radius:3px;font-size:8px;font-weight:600}
+.pgr{display:flex;align-items:center;gap:7px;padding:.5rem 0;justify-content:center}
+.pgr button{border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:3px 8px;font-size:10px;cursor:pointer;color:var(--color-text-primary);font-family:var(--font-sans)}
+.pgr button:disabled{opacity:.35;cursor:default}
+.pgr .pi{font-size:10px;color:var(--color-text-secondary)}
+.nr{padding:2rem;text-align:center;color:var(--color-text-tertiary);font-size:11px}
+</style>
+<div id="app">
+<div class="topbar">
+  <div class="logo"><i class="ti ti-chart-candle"></i><span>NEPSE SCREENER</span></div>
+  <label class="qml-btn" style="background:linear-gradient(135deg,#1a5c3a,#0d8f5c);border-color:#1e8a5a;color:#7ef7c8;cursor:pointer;" title="Import live scrip CSV (Symbol, LTP, Point Change, % Change, Open, High, Low, Volume, Prev Close) to refresh today's LTP for all matching scrips">
+    <i class="ti ti-upload"></i>Import Live CSV
+    <input type="file" accept=".csv" onchange="importScreenerCSV(this.files[0])" style="display:none;">
+  </label>
+  <span id="screener-csv-status" style="font-size:9px;color:var(--color-text-secondary);white-space:nowrap;"></span>
+  <button class="qml-btn" style="background:linear-gradient(135deg,#5c3a1a,#8f5c0d);border-color:#8a5a1e;color:#f7c87e;" onclick="exportScreenerExcel()" title="Export the current (filtered/sorted) screener view as an Excel file">
+    <i class="ti ti-file-spreadsheet"></i>Export Excel
+  </button>
+  <a class="qml-btn" href="https://qml-v2.tiiny.site" target="_blank" onclick="if(window.parent!==window){window.parent.postMessage({type:'gotoTab',tab:'qml'},'*');return false;}"><i class="ti ti-external-link"></i>QML Dashboard</a>
+  <div class="sw"><i class="ti ti-search" style="font-size:13px;color:var(--color-text-secondary)"></i>
+    <input type="text" id="q" placeholder="Search symbol…" oninput="go()">
+  </div>
+</div>
+<div class="filters">
+  <div class="fg"><i class="ti ti-building" style="font-size:11px"></i>
+    <select id="f-sec" onchange="go()"><option value="">All Sectors</option><option>Commercial Banks</option><option>Development Banks</option><option>Finance</option><option>Hydropower</option><option>Life Insurance</option><option>Non-Life Insurance</option><option>Microfinance</option><option>Mutual Funds</option><option>Debentures</option><option>Manufacturing</option><option>Hotels & Tourism</option><option>Infrastructure</option><option>Others</option></select>
+    <i class="ti ti-chevron-down" style="font-size:9px"></i>
+  </div>
+  <div class="fg"><i class="ti ti-trending-up" style="font-size:11px"></i>
+    <select id="f-chg" onchange="go()"><option value="">Any Move</option><option value="up">Gainers</option><option value="down">Losers</option><option value="big">Big Drop (&lt;-3%)</option><option value="surge">Surge (&gt;3%)</option></select>
+    <i class="ti ti-chevron-down" style="font-size:9px"></i>
+  </div>
+  <div class="fg"><i class="ti ti-coin" style="font-size:11px"></i>
+    <select id="f-ltp" onchange="go()"><option value="">Any Price</option><option value="u200">Under Rs 200</option><option value="200-500">Rs 200-500</option><option value="500-1000">Rs 500-1K</option><option value="1000p">Over Rs 1K</option></select>
+    <i class="ti ti-chevron-down" style="font-size:9px"></i>
+  </div>
+  <div class="fg"><i class="ti ti-book-2" style="font-size:11px"></i>
+    <select id="f-pbv" onchange="go()"><option value="">Any P/BV</option><option value="u1">Below Book</option><option value="1-2">1x-2x</option><option value="2-5">2x-5x</option><option value="5p">&gt;5x</option></select>
+    <i class="ti ti-chevron-down" style="font-size:9px"></i>
+  </div>
+  <div class="fg"><i class="ti ti-activity" style="font-size:11px"></i>
+    <select id="f-52" onchange="go()"><option value="">52W Any</option><option value="nearhi">Near High</option><option value="nearlow">Near Low</option><option value="mid">Mid Range</option></select>
+    <i class="ti ti-chevron-down" style="font-size:9px"></i>
+  </div>
+  <div class="fg"><i class="ti ti-flame" style="font-size:11px"></i>
+    <select id="f-vol" onchange="go()"><option value="">Any Volume</option><option value="h">&gt;50K</option><option value="m">10K-50K</option><option value="l">&lt;10K</option></select>
+    <i class="ti ti-chevron-down" style="font-size:9px"></i>
+  </div>
+</div>
+<div class="chips" id="chips"></div>
+<div class="sm" id="summary"></div>
+<div class="rh"><span id="cnt"></span>
+  <div style="display:flex;align-items:center;gap:4px">
+    <span style="font-size:10px;color:var(--color-text-secondary)">Sort</span>
+    <select class="ss" id="sort" onchange="go()">
+      <option value="vol">Volume</option><option value="chg">Change %</option>
+      <option value="ltp">LTP</option><option value="pbv">P/BV</option>
+      <option value="range">52W Pos</option><option value="sym">Symbol</option>
+    </select>
+  </div>
+</div>
+<div class="tw"><table>
+  <thead><tr>
+    <th onclick="setSort('sym')">Symbol</th>
+    <th onclick="setSort('ltp')">LTP</th>
+    <th onclick="setSort('chg')">Chg%</th>
+    <th onclick="setSort('vol')">Vol</th>
+    <th>52W Range</th>
+    <th onclick="setSort('pbv')">BVPS</th>
+    <th onclick="setSort('pbv')">P/BV</th>
+    <th>Open</th><th>Sector</th>
+  </tr></thead>
+  <tbody id="tbody"></tbody>
+</table></div>
+<div class="pgr" id="pgr"></div>
+</div>
+<script>
+const SC={'Commercial Banks':['#E6F1FB','#185FA5'],'Development Banks':['#E1F5EE','#0F6E56'],'Finance':['#EEEDFE','#534AB7'],'Hydropower':['#EAF3DE','#3B6D11'],'Life Insurance':['#FAEEDA','#BA7517'],'Non-Life Insurance':['#FAECE7','#993C1D'],'Microfinance':['#FBEAF0','#993556'],'Mutual Funds':['#E6F1FB','#0C447C'],'Debentures':['#F1EFE8','#5F5E5A'],'Manufacturing':['#FCEBEB','#A32D2D'],'Hotels & Tourism':['#FAEEDA','#633806'],'Infrastructure':['#E1F5EE','#085041'],'Others':['#F1EFE8','#444441']};
+const SM={NABIL:'Commercial Banks',EBL:'Commercial Banks',HBL:'Commercial Banks',KBL:'Commercial Banks',GBIME:'Commercial Banks',SBI:'Commercial Banks',SBL:'Commercial Banks',NBL:'Commercial Banks',PCBL:'Commercial Banks',PRVU:'Commercial Banks',NMB:'Commercial Banks',SANIMA:'Commercial Banks',MBL:'Commercial Banks',CZBIL:'Commercial Banks',SCB:'Commercial Banks',NICA:'Commercial Banks',NIMB:'Commercial Banks',ADBL:'Commercial Banks',NIMBPO:'Commercial Banks',RBCL:'Commercial Banks',RBCLPO:'Commercial Banks',HBLPO:'Commercial Banks',MBLPO:'Commercial Banks',
+GBBL:'Development Banks',KSBBL:'Development Banks',JBBL:'Development Banks',MNBBL:'Development Banks',SKBBL:'Development Banks',SWBBL:'Development Banks',MLBL:'Development Banks',SLBBL:'Development Banks',SADBL:'Development Banks',EDBL:'Development Banks',CORBL:'Development Banks',GRDBL:'Development Banks',DDBL:'Development Banks',KMCDB:'Development Banks',NMLBBL:'Development Banks',CBBL:'Development Banks',MLBBL:'Development Banks',SAPDBL:'Development Banks',FMDBL:'Development Banks',LBBL:'Development Banks',CITY:'Development Banks',KSBBLP:'Development Banks',MLBLPO:'Development Banks',
+SIFC:'Finance',CFCL:'Finance',BFC:'Finance',ICFC:'Finance',GFCL:'Finance',MPFL:'Finance',SFCL:'Finance',PFL:'Finance',JFL:'Finance',CLI:'Finance',RLFL:'Finance',PMLI:'Finance',NESDO:'Finance',PROFL:'Finance',GUFL:'Finance',GILB:'Finance',GLBSL:'Finance',BHCL:'Finance',SMPDA:'Finance',VLUCL:'Finance',
+AHPC:'Hydropower',AKJCL:'Hydropower',AKPL:'Hydropower',BPCL:'Hydropower',BEDC:'Hydropower',DORDI:'Hydropower',DOLTI:'Hydropower',EHPL:'Hydropower',HDHPC:'Hydropower',HURJA:'Hydropower',NHDL:'Hydropower',NGPL:'Hydropower',RIDI:'Hydropower',RFPL:'Hydropower',SHPC:'Hydropower',TPC:'Hydropower',UPPER:'Hydropower',RHPL:'Hydropower',RHGCL:'Hydropower',AHL:'Hydropower',API:'Hydropower',BHL:'Hydropower',BHPL:'Hydropower',CHL:'Hydropower',CKHL:'Hydropower',DHPL:'Hydropower',GHL:'Hydropower',GLH:'Hydropower',GVL:'Hydropower',HPPL:'Hydropower',HRL:'Hydropower',KPCL:'Hydropower',LEC:'Hydropower',LSL:'Hydropower',MEL:'Hydropower',MHNL:'Hydropower',MKHL:'Hydropower',MKHC:'Hydropower',NFS:'Hydropower',NYADI:'Hydropower',PMHPL:'Hydropower',PPCL:'Hydropower',PPL:'Hydropower',RADHI:'Hydropower',SAHAS:'Hydropower',SJCL:'Hydropower',SMHL:'Hydropower',SOHL:'Hydropower',SPHL:'Hydropower',TSHL:'Hydropower',UPCL:'Hydropower',USHEC:'Hydropower',UMHL:'Hydropower',HEI:'Hydropower',HEIP:'Hydropower',BHDC:'Hydropower',BNHC:'Hydropower',NWCL:'Hydropower',RLEL:'Hydropower',RAWA:'Hydropower',SSHL:'Hydropower',ULHC:'Hydropower',SMJC:'Hydropower',SPDL:'Hydropower',SIKLES:'Hydropower',SINDU:'Hydropower',TAMOR:'Hydropower',TTL:'Hydropower',TVCL:'Hydropower',UMRH:'Hydropower',UNHPL:'Hydropower',USHL:'Hydropower',PURE:'Hydropower',MHCL:'Hydropower',MCHL:'Hydropower',MHL:'Hydropower',MKJC:'Hydropower',OMPL:'Hydropower',MSHL:'Hydropower',BARUN:'Hydropower',DHEL:'Hydropower',PHCL:'Hydropower',CGH:'Hydropower',SGHC:'Hydropower',MMKJL:'Hydropower',SHL:'Hydropower',BJHL:'Hydropower',HDL:'Hydropower',CHCL:'Hydropower',ENL:'Hydropower',SPIL:'Hydropower',SPL:'Hydropower',SONA:'Hydropower',UAIL:'Hydropower',UHEWA:'Hydropower',SHINE:'Hydropower',NRM:'Hydropower',SIPD:'Hydropower',SKHL:'Hydropower',SKHEL:'Hydropower',MABEL:'Hydropower',SAIL:'Hydropower',RURU:'Hydropower',NABBC:'Hydropower',NHPC:'Hydropower',KHPL:'Hydropower',APHL:'Hydropower',TPKHL:'Hydropower',YMHL:'Hydropower',
+NLIC:'Life Insurance',LICN:'Life Insurance',NLICL:'Life Insurance',JBLB:'Life Insurance',MSLB:'Life Insurance',UNLB:'Life Insurance',WNLB:'Life Insurance',USLB:'Life Insurance',LLBS:'Life Insurance',MLBSL:'Life Insurance',ILBS:'Life Insurance',DLBS:'Life Insurance',GBLBS:'Life Insurance',VLBS:'Life Insurance',HLBSL:'Life Insurance',SHLB:'Life Insurance',SLBSL:'Life Insurance',
+ALICL:'Non-Life Insurance',NICL:'Non-Life Insurance',SALICO:'Non-Life Insurance',PRIN:'Non-Life Insurance',HLI:'Non-Life Insurance',ILI:'Non-Life Insurance',SICL:'Non-Life Insurance',SJLIC:'Non-Life Insurance',SNLI:'Non-Life Insurance',NICLBSL:'Non-Life Insurance',RNLI:'Non-Life Insurance',NRIC:'Non-Life Insurance',IGI:'Non-Life Insurance',NIL:'Non-Life Insurance',SGIC:'Non-Life Insurance',NLG:'Non-Life Insurance',GCIL:'Non-Life Insurance',HATHY:'Non-Life Insurance',
+GMFBS:'Microfinance',NMFBS:'Microfinance',SMFBS:'Microfinance',CBBL:'Microfinance',GMFIL:'Microfinance',GMLI:'Microfinance',FOWAD:'Microfinance',AVYAN:'Microfinance',SWMF:'Microfinance',NADEP:'Microfinance',ANLB:'Microfinance',BNL:'Microfinance',NMBMF:'Microfinance',
+CMF2:'Mutual Funds',CSY:'Mutual Funds',GSY:'Mutual Funds',GIBF1:'Mutual Funds',H8020:'Mutual Funds',HLICF:'Mutual Funds',KSY:'Mutual Funds',KEF:'Mutual Funds',KDBY:'Mutual Funds',LUK:'Mutual Funds',LVF2:'Mutual Funds',MMF1:'Mutual Funds',MNMF1:'Mutual Funds',MBLEF:'Mutual Funds',NBF2:'Mutual Funds',NBF3:'Mutual Funds',NIBLGF:'Mutual Funds',NIBLSTF:'Mutual Funds',NIBSF2:'Mutual Funds',NICFC:'Mutual Funds',NICGF2:'Mutual Funds',NICBF:'Mutual Funds',NICSF:'Mutual Funds',NMBHF2:'Mutual Funds',NSY:'Mutual Funds',PSF:'Mutual Funds',PRSF:'Mutual Funds',RMF1:'Mutual Funds',RMF2:'Mutual Funds',RSY:'Mutual Funds',RBBF40:'Mutual Funds',SAGF:'Mutual Funds',SBCF:'Mutual Funds',SEF:'Mutual Funds',SFEF:'Mutual Funds',SFMF:'Mutual Funds',SIGS2:'Mutual Funds',SIGS3:'Mutual Funds',SLCF:'Mutual Funds',GBIMESY2:'Mutual Funds',C30MF:'Mutual Funds',NMB50:'Mutual Funds',
+SHIVM:'Manufacturing',RSML:'Manufacturing',STC:'Manufacturing',BANDIPUR:'Manufacturing',ACLBSL:'Manufacturing',ALBSL:'Manufacturing',CYCL:'Manufacturing',BUNGAL:'Manufacturing',BBC:'Manufacturing',MFIL:'Manufacturing',MAKAR:'Manufacturing',MDB:'Manufacturing',SMATA:'Manufacturing',CREST:'Manufacturing',SMB:'Manufacturing',HFIN:'Manufacturing',CHDC:'Manufacturing',UNL:'Manufacturing',
+OHL:'Hotels & Tourism',TRH:'Hotels & Tourism',KDL:'Hotels & Tourism',RSDC:'Hotels & Tourism',SARBTM:'Hotels & Tourism',SPC:'Hotels & Tourism',RSDCP:'Hotels & Tourism',SNORL:'Hotels & Tourism',
+NIFRA:'Infrastructure',HIDCL:'Infrastructure',HIDCLP:'Infrastructure',JOSHI:'Infrastructure',NTC:'Infrastructure',
+BNT:'Others',
+'NICAD85/86':'Debentures','NIFRAUR85/86':'Debentures','NMBD87/88':'Debentures',SHINED:'Debentures',NIFRAGED:'Debentures',SCBD:'Debentures',BOKD86KA:'Debentures','NICD83/84':'Debentures',
+};
+function loadOverrides(){try{return JSON.parse(localStorage.getItem('twv_sector_override')||'{}');}catch(e){return{};}}
+function saveOverride(sym,sec){var o=loadOverrides();if(sec)o[sym]=sec;else delete o[sym];localStorage.setItem('twv_sector_override',JSON.stringify(o));}
+var SECOV=loadOverrides();
+function getSec(s){
+  if(SECOV[s])return SECOV[s];
+  if(/D8[2-9]$|D9[0-9]$|D2085$|D2089$|D209[0-9]$|D208[0-9]$|EB89$|BD8[0-9]|BD9[0-9]|BD20|D87\/88$|D86\/87$|D84\/85$|D85\/86$|D84$|D85$|D86$|D87$|D88$|D89$|D83$|D90$|D91$/.test(s))return'Debentures';
+  return SM[s]||'Others';
+}
+function goToScrip(sym){if(window.parent!==window){window.parent.postMessage({type:'gotoScrip',sym:sym},'*');}}
+function editSector(sym,ev){
+  ev.stopPropagation();
+  var secs=Object.keys(SC);
+  var cur=getSec(sym);
+  var pick=prompt('Sector for '+sym+':\n'+secs.map(function(s,i){return(i+1)+') '+s;}).join('\n')+'\n\nType number or exact name:',cur);
+  if(pick===null)return;
+  var n=parseInt(pick,10);
+  var chosen=(!isNaN(n)&&secs[n-1])?secs[n-1]:secs.find(function(s){return s.toLowerCase()===pick.trim().toLowerCase();});
+  if(!chosen){alert('Not a valid sector.');return;}
+  saveOverride(sym,chosen);SECOV=loadOverrides();
+  STOCKS.forEach(function(s){if(s.sym===sym)s.sec=chosen;});
+  go();
+}
+const BV={NABIL:220,EBL:315,HBL:192,KBL:155,GBIME:158,SBI:170,SBL:182,NBL:148,PCBL:153,PRVU:147,NMB:168,SANIMA:185,MBL:152,CZBIL:165,SCB:287,NICA:180,NIMB:160,ADBL:198,GBBL:185,KSBBL:195,JBBL:165,MNBBL:180,SKBBL:225,SWBBL:230,MLBL:195,SLBBL:250,SADBL:178,EDBL:200,CORBL:385,GRDBL:238,DDBL:280,KMCDB:310,LBBL:185,FMDBL:210,CBBL:485,NMLBBL:250,MLBBL:390,SAPDBL:295,CITY:170,ICFC:260,SIFC:215,CFCL:200,GFCL:220,MPFL:195,SFCL:180,PFL:175,JFL:165,CLI:175,RLFL:180,PMLI:190,PROFL:155,GUFL:168,BHCL:148,NESDO:320,GILB:485,GLBSL:780,AHPC:140,AKJCL:135,AKPL:118,BPCL:290,NHPC:105,NGPL:155,HDHPC:120,HIDCL:155,UPPER:90,API:135,SHPC:175,TPC:140,AHL:195,BHL:118,BHDC:170,BHPL:180,CHL:128,CKHL:205,DHPL:135,EHPL:145,GHL:98,GLH:122,GVL:168,HPPL:145,HRL:215,HURJA:128,KPCL:175,LEC:118,LSL:125,MEL:128,MHNL:115,MKHL:215,MKHC:182,NFS:200,NYADI:165,PMHPL:138,PPCL:128,PPL:115,RADHI:220,SJCL:128,SMHL:148,SOHL:165,SPHL:175,TSHL:205,UPCL:145,USHEC:155,UMHL:175,UMRH:190,UNHPL:130,PURE:265,MHCL:158,MCHL:178,MHL:220,MKJC:200,OMPL:355,MSHL:310,DHEL:135,PHCL:125,CGH:252,SGHC:142,MMKJL:225,SHL:198,BJHL:225,HDL:355,CHCL:178,ENL:265,SPIL:280,SPL:218,SONA:172,UAIL:210,UHEWA:225,SHINE:182,NRM:175,SIPD:225,SKHL:215,SKHEL:325,MABEL:198,SAIL:265,NABBC:398,BARUN:142,BEDC:155,BNHC:175,DOLTI:152,DORDI:118,NHDL:255,NWCL:298,RFPL:128,RHGCL:112,RHPL:118,RIDI:108,RLEL:245,RAWA:205,SSHL:75,ULHC:162,SMJC:178,SPDL:148,SIKLES:225,SINDU:278,TAMOR:178,TTL:238,TVCL:198,RURU:245,BUNGAL:185,SAHAS:165,HEI:210,MFIL:380,NLIC:398,LICN:350,NLICL:285,JBLB:680,MSLB:620,UNLB:590,WNLB:560,LLBS:420,MLBSL:790,ILBS:380,DLBS:480,GBLBS:310,VLBS:325,HLBSL:365,SHLB:620,SLBSL:485,ALICL:210,NICL:265,SALICO:230,PRIN:215,HLI:165,ILI:175,SICL:248,SJLIC:178,SNLI:190,NICLBSL:245,RNLI:215,NRIC:380,IGI:178,NIL:225,SGIC:198,NLG:285,GCIL:175,HATHY:335,GMFBS:850,NMFBS:720,SMFBS:980,FOWAD:680,GMFIL:198,GMLI:580,AVYAN:420,NADEP:295,ANLB:2850,UNL:9800,SHIVM:320,STC:2850,MAKAR:215,MDB:248,SMATA:295,CREST:498,SMB:620,HFIN:280,CHDC:780,ACLBSL:375,ALBSL:490,CYCL:595,BBC:1950,BANDIPUR:185,OHL:280,TRH:385,RSML:1200,RSDC:265,SARBTM:295,SPC:215,NIFRA:115,JOSHI:148,NTC:425,HIDCLP:115,SANVI:180,SAGAR:420,PCIL:285,MERO:380,KBSH:545};
+const RAW=[
+['ACLBSL',960,0.3,1177,1240,827.9,950],['ADBL',317,-0.28,36488,344.9,277,312.4],['AHL',447.3,-0.38,5792,700,435,450.9],['AHPC',277,-0.72,92890,334,250.1,279],['AKJCL',362,-1.09,231421,461.4,172.9,370],['AKPL',267,-1,62142,317,227.5,269],['ALBSL',1099.6,2.1,12674,1334,801.1,1040],['ALICL',459,-0.22,7346,550,430,460],['ANLB',6673,10.09,10311,6989,5220,5761],['APHL',905,1.91,27833,1053.4,299.7,888],['API',333.8,-0.3,114229,370,258.8,336],['AVYAN',1114.9,0.17,4489,1366,906,1110],['BANDIPUR',820,-0.62,23830,1233,285,825.1],['BARUN',340,-1.45,41713,473,292.1,347.8],['BBC',4475,-0.16,493,6120,4271.1,4482.1],['BEDC',340,0.77,18690,872,314.9,338],['BFC',514,7.55,264073,579.9,411.5,465],['BGWT',656,0.92,2110,1110,586.5,650.1],['BHCL',594,-0.92,110562,699,292.1,629.4],['BHDC',442.9,-0.07,2966,706,422,443],['BHL',219,-0.68,109602,264.4,164,221],['BHPL',548.6,-0.62,11242,916.9,495,565],['BJHL',867.9,-2.6,8293,1305,270.1,900],['BNHC',314.7,0.06,6063,613.8,306.1,314.9],['BPCL',659.9,2.69,15303,1065,617.5,674.7],['BUNGAL',652,2.35,33044,895,302.4,650],['C30MF',10.01,-0.89,400,10.71,8.7,10.01],['CBBL',910,0,10348,1144.8,882,922.9],['CBLD88',1285,1.18,5,1325,1108,1270],['CCBD88',1262.4,-0.04,25,1297.4,1126,1262.9],['CFCL',630,2.62,294495,649.9,445.1,584],['CGH',792,0.11,14122,1150,789,795],['CHCL',495.4,-0.92,33537,599.6,450.3,500],['CHDC',2269,0.12,8660,2997.9,1990,2262],['CHL',267.1,-0.34,6764,358,223.4,270],['CIT',1755,-0.5,11075,2168,1699.9,1770],['CITY',401.8,-0.3,173365,998.4,349.2,403],['CIZBD86',1180,-1.87,25,1320.9,1110,1180],['CKHL',665,-0.08,2230,804,550,665.5],['CLI',465.5,-0.11,14320,540,411,464.7],['CMF2',9.9,2.17,3000,10.86,8.64,9.44],['CORBL',1700,-5.56,27014,3183,1431,1833],['CREST',1310,9.53,18471,1588,985.2,1161],['CSY',9.7,3.3,6200,10,8.87,9.21],['CYCL',1455,-1.01,933,2040,1431.1,1455],['CZBIL',202.5,-0.44,44123,240.1,183,205],['DDBL',822.2,-0.94,5344,1010,793,839.9],['DHEL',621,-1.43,18100,918.9,402.2,620],['DHPL',302,-0.07,8941,362.9,265,300],['DLBS',1266,-0.24,403,1684,1214.3,1269],['DOLTI',350,-1.13,27819,642.6,329,345.5],['DORDI',273.8,-1.51,28296,413.5,213.1,278],['EBL',709.4,0.06,23119,780.6,619,709],['EBLD85',1120,-3.45,151305,1250,1102.5,1135],['EBLD86',1145,0,110185,1150,1022,1142],['EBLD91',1099,-0.09,170,1142.4,994.4,1100],['EBLEB89',1080,0,25,1117.9,996.1,1080],['EDBL',588.2,-0.1,2565,717.3,545,583.5],['EHPL',387.9,-0.54,22626,685,370,388],['ENL',880,-0.52,795,1225,844,891],['FMDBL',763,-0.2,12709,1038.8,733,763.6],['FOWAD',970,-1.01,1127,1364,955,979.9],['GBBD85',1115,-0.27,40,1135,1030,1110],['GBBL',416,-0.45,19964,498,367.4,415.2],['GBILD86/87',1121,-1.31,15,1142,1016,1121],['GBIME',238.1,-0.25,89456,278.9,218.9,239],['GBIMESY2',9.4,-0.53,1200,10.18,8.5,9.22],['GBLBS',750,-0.53,1791,950,698,745.3],['GCIL',418,-1.3,15879,579,400,418],['GFCL',669,1.36,49787,756.8,528.3,660],['GHL',223,0,13820,290,197.1,223],['GIBF1',11,1.48,2000,11.68,9.3,10.8],['GILB',1070.1,-2.18,1289,1441.6,1062.2,1094],['GLBSL',1835.8,-0.16,539,2528,1705.2,1838.8],['GLH',265,-1.52,35034,328.2,227.4,270.9],['GMFBS',1297.9,-0.08,49,1871,1257.1,1299],['GMFIL',495.5,2.59,69243,557,393.1,459],['GMLI',1329,-1.85,2542,2450,1230,1353],['GRDBL',1048.9,0.97,1900,1668.4,949,1030],['GSY',10.02,-0.1,2600,10.4,8.7,10],['GUFL',558,0,8092,644,460.6,562.9],['GVL',490,-0.41,15808,662,430.2,489],['H8020',12.16,0.5,1300,12.56,10,11.8],['HATHY',705,-1.25,2817,1382.4,671,715],['HBL',201,0,54217,261,184,201],['HBLD83',1036.1,0.11,3,1111,1020,1035],['HDHPC',218.9,-0.95,151845,274,162,224],['HDL',1168,-0.68,20224,1556.1,1103,1175],['HEI',565,-0.88,13972,654,458,570],['HEIP',320,-0.22,60,398,293.1,320],['HFIN',735,-0.43,14536,1450.6,101.7,738.2],['HHL',339.8,-0.06,11457,459,310.7,340],['HIDCL',265,-0.45,61544,330.3,245,265.5],['HIDCLP',201.4,-0.59,114201,239,174.4,202],['HIMSTAR',780,-1.76,5357,1264,252.2,816],['HLBSL',887.9,1.42,2262,1100,837,853.6],['HLI',341.9,-0.9,38829,464,334,344],['HLICF',8.92,1.83,900,10.55,8.5,8.76],['HPPL',363.8,0.5,9926,605,353,366],['HRL',661,-0.5,79072,1139.9,584,631.1],['HURJA',252.5,-0.98,42526,312.1,204.6,255.1],['ICFC',649,1.41,45301,730.9,588,642.9],['ICFCD88',1157,-0.26,25,1216,1053.6,1157],['ICFCD89',1105,0.73,50,1115,1020,1095],['IGI',460.7,-0.07,14420,600,392,461],['IHL',402,-1.93,17286,640,365,402],['ILBS',896.8,-0.02,1391,1311,832,900],['ILI',441.5,-0.59,8650,500,405,448.9],['JBBL',359.9,-0.3,38973,413,295,355],['JBLB',1297,-0.23,2616,1644,1219.9,1300],['JFL',396,-0.5,3236,558,385.4,398],['JHAPA',1268.9,-0.87,10147,1929,293.4,1270],['JOSHI',278,-1.28,11088,487,254,283],['JSLBB',1095,0,70,1485,1059,1096],['KBL',215.3,2.48,220816,256,175.5,212],['KBLD86',1180,-2.67,10,1289,1096.3,1180],['KBLD90',1222,0.58,30165,1500,1127,1249],['KBSH',1410,0,181,2189,1150,1390],['KDBY',11.4,0,248500,12.54,8.67,11.11],['KDL',834,0.97,1597,1200,770,840],['KEF',10.61,0.47,2700,11.3,8.31,10.75],['KHPL',757.6,15,440,757.6,300,691.7],['KKHC',264,-2.19,59787,475.9,208,282.9],['KMCDB',871,-0.11,496,1223,840.5,872],['KPCL',471.5,-0.74,3912,711,465,475],['KSBBL',474,-0.48,6323,588,404.1,475],['KSBBLD87',1132,-2.07,20,1201,1041.3,1132],['KSY',9.75,0.52,1900,10.51,8.21,9.99],['LBBL',500,0,19221,646.3,413,505],['LBLD88',1144.8,7.7,64355,1166,1040,1063],['LEC',212,-0.24,25040,276,180,215.4],['LICN',818,-0.24,38457,990,773,820.1],['LLBS',920,-1.5,1075,1300.5,819.4,906],['LSL',222,1.37,1917570,252,203,220],['LUK',10,-1.96,7485,11.97,8.97,9.9],['LVF2',9.96,-0.5,1700,11.45,8.76,9.72],['MABEL',689,-4.17,28051,927,317.7,705],['MAKAR',496.6,-0.68,4590,690,455,500],['MANDU',820,-0.33,1060,970,766.5,802.1],['MATRI',902,-0.22,901,1347,866,904],['MBJC',286,-0.03,11708,362,270,285],['MBL',249.8,2.8,82504,284,205,245.8],['MBLEF',10.2,0.49,42700,10.8,8.59,10],['MBLPO',132,0,2686,132,132,132],['MCHL',304.8,-0.07,1466,584,288.1,303.5],['MDB',620.4,0.32,6507,729.7,530.5,618.4],['MEHL',377.6,-0.37,5385,519,363.1,370],['MEL',240,-2.44,7592,350,216,250],['MEN',575,-0.52,63345,683.4,535,580],['MERO',730.7,-0.45,4901,1000,700,734],['MFIL',804.9,1.89,120817,938,545,778.1],['MHCL',354,-0.28,10306,515.1,325,350.6],['MHL',500,-1.19,6285,664,445,498.1],['MHNL',245.6,0.66,18888,324,226,243],['MKCL',1267,0.55,1601,1900,1230,1260],['MKHC',321,0.16,15537,503.4,310.2,324],['MKHL',515,-0.39,9562,1027,491.8,510],['MKJC',503.5,-0.24,4804,635,469.4,492.1],['MLBBL',1209.5,-0.03,1538,1690,1143,1200],['MLBL',367.5,-0.65,13150,468.6,348.9,351.5],['MLBS',1166,0.34,530,1900,1131,1168],['MLBSL',1790,0.56,121,2435.5,1700,1770],['MMF1',9.45,0.32,13360,10.16,8.22,9.53],['MMKJL',477,0.21,1507,699.9,462,476.2],['MNBBL',367.8,-0.03,10559,503,340.1,363],['MND84/85',1076.1,1.42,50,1128,1033,1069.9],['MNMF1',9.85,-1.4,7300,10.4,8.53,9.82],['MPFL',612,0.33,3924,744,491,600],['MSHL',690,0.15,144,979,647.4,689.9],['MSLB',1228,-1.37,663,1710,1089.9,1222],['NABBC',752,-2.59,2959,1835,662,777],['NABIL',535,-0.71,38895,563,471,537],['NABILD87',1152.1,1.68,28374,1200,1040,1152],['NADEP',725,0.69,777,1046,696,735],['NBF2',10.06,0,2700,11.1,8.89,10.36],['NBF3',10.03,0.1,74484,10.67,8.35,9.75],['NBL',268,-0.67,103366,313,225.4,270],['NCCD86',1181.5,4.72,23399,1230,1060.1,1162.1],['NESDO',1540,0.33,351,1879,1380.1,1550],['NFS',583,-0.1,5796,851,555,584],['NGPL',439.9,-0.41,167326,502,343,442.9],['NHDL',641,0.36,5658,796,615,638],['NHPC',283.5,-0.98,255608,340,178.6,275],['NIBD84',1085,1.88,14178,1130,1013.1,1075],['NIBLGF',9.25,0,9900,11.81,8.24,9.5],['NIBLSTF',9.01,-0.77,1000,10.85,8.02,9.22],['NIBSF2',9.1,0.89,400,11.13,8.1,9.02],['NICA',346,-1.23,63840,428.4,304.5,347.2],['NICAD85/86',1130,-10.6,360836,1264,1060,1226.1],['NICBF',9.3,2.99,500,11.2,8.45,9.3],['NICD83/84',1036,-1.33,50,1145,1036,1043],['NICFC',9.54,0.42,3450,10.4,8.37,9.5],['NICGF2',9.3,-1.27,13200,10.13,8.33,9.2],['NICL',563,-0.35,99249,794,475,565],['NICLBSL',552,-1.06,2646,764,535,558],['NICSF',9.35,0.65,2700,9.99,8.04,9.4],['NIFRA',261.5,-0.57,70391,328.1,249.9,261.79],['NIFRAGED',1042,0.08,93,1200.2,948,1026.2],['NIFRAUR85/86',1071,0.56,60,1128,980,1040.2],['NIL',656.2,-1.03,14349,783.9,562,663],['NIMB',197.3,-0.35,46402,247,184.2,207.9],['NIMBPO',145.5,-3.51,10794,184.5,142,150],['NLG',647,-1.97,30358,976.2,547.6,650],['NLIC',744,-0.13,19400,890,702,782.2],['NLICL',595,0.02,4289,691,539,585.3],['NMB',241,1.18,38113,283,230,238.5],['NMB50',10.5,1.45,5200,11.93,9.75,10.49],['NMBD87/88',1138.5,5.31,310,1196.4,1040,1086],['NMBHF2',9.7,-0.82,3010,10.2,8.5,9.5],['NMBMF',642,-1.82,2065,835,596,641.1],['NMFBS',1146,0.53,6038,1504,1051.9,1140],['NMIC',958,-0.73,1927,1770,918.9,965],['NMLBBL',595.9,0.66,4295,807,565,583.1],['NRIC',1070,-1.38,59901,1842,865,1085],['NRM',330,0.3,6301,590,311,329],['NRN',1419.9,-0.5,37733,2444,1306,1400],['NSIF2',10.85,0.93,58400,11.93,9.75,10.75],['NSY',9.69,1.89,13865,10.19,9.06,9.79],['NTC',857,-0.31,15647,942.5,762.5,851.1],['NUBL',666,0.54,3740,854.4,643.1,661],['NWCL',790,-0.38,3205,1045,740.2,806],['NYADI',421,-1.86,12782,510,354,435],['OHL',680,-0.29,245,948,633.1,682],['OMPL',1010,1,1043,1590,960,1024.4],['PBD84',1110,0,25,1182,1070.2,1110],['PBD88',1195,-0.99,54,1279.9,1099.7,1207],['PBLD84',1076,-0.84,2,1158.4,1062.1,1085.1],['PCBL',236.4,1.07,30982,290,225,232.1],['PCIL',780,-1.17,39256,1280,300,749.8],['PFL',390,4.28,26462,475.5,352.8,374],['PHCL',299.9,-0.37,26756,564,249.7,303],['PMHPL',338,-1.34,7155,468,285,338],['PMLI',455,-0.66,5021,572,440,452],['PPCL',386,-1.03,16054,462,284.1,389],['PPL',351,0.29,29679,510,263.2,332.5],['PRIN',703,-0.85,30446,960.3,630,720],['PROFL',439.5,0.11,5616,589.2,421.4,433],['PRSF',12.99,-0.08,536428,13.61,9.85,12.96],['PRVU',197,2.87,141263,250.9,179.9,191],['PSF',11.88,-0.17,35000,13,9.91,11.9],['PURE',910,-1.41,6565,1327.9,475.1,917],['RADHI',720,-0.28,29147,940,618.8,722],['RAWA',562,-1.04,1611,882,552,567.9],['RBBD2088',1087.5,2.97,616,1157,967.6,1055.5],['RBBF40',9.2,0.77,2100,10.2,8.98,9.1],['RBCL',14449.9,-0.28,175,16900,14015,14305],['RBCLPO',11900,-3.72,110,13530,11250,11990],['RFPL',364.9,-0.57,30584,785,306,353],['RHGCL',285.9,-1.92,46868,448.3,217.2,287],['RHPL',274,-0.72,12576,457,252.3,280],['RIDI',333.6,-0.71,72024,393,203.5,336],['RLEL',928,-3.83,25466,1592.3,300,965],['RLFL',469.7,-1.12,45907,558,398,467.3],['RMF1',9.86,-1.4,200,11.4,8.65,9.83],['RMF2',10.35,2.07,500,10.71,8.78,10.15],['RNLI',474.5,-0.32,22198,526,416,470],['RSDC',652,0.62,2719,880,578.7,664],['RSML',3274,-3.71,79286,5049,300,3230],['RSY',10.33,0.78,39000,10.7,8.58,10.25],['RURU',644.9,0.45,5276,853,607.1,656],['SABBL',1185,-1.33,10226,2000,300,1195],['SADBL',409.9,0.71,8023,526.5,376,403.1],['SAGAR',1541.1,-3.07,1813,2439,319.5,1587.1],['SAGF',10.49,2.84,2200,11.31,8.79,10.2],['SAHAS',642,-0.31,122806,716.6,535.3,655.9],['SAIL',1057,-2.85,36384,1690,301.7,1088],['SALICO',645,2.06,13156,765.9,570.1,628.1],['SAND2085',1152,-0.54,25,1189,1081.7,1152],['SANIMA',368,-0.11,136061,391,295,370],['SANVI',633,0.48,4798,1060,359,633.9],['SAPDBL',848,2.11,66426,1284,686,872],['SARBTM',808.8,-0.64,2378,1048,799,810],['SBCF',9.9,1.02,7400,12.03,8.82,9.8],['SBD87',1131.6,1.49,50116,1139,1019.5,1131.6],['SBD89',1190,-0.42,40,1320,1135.2,1200],['SBI',392.2,1.34,1984,452,363,386],['SBID2090',1151.5,3,2,1184.5,1000,1118],['SBID83',1096,1.01,70350,1226,1025,1083],['SBID89',1147,0.16,19,1266,1049,1147],['SBL',401,-0.72,71065,424,291,405.9],['SBLD2091',1092,2.92,425,1150,825.35,1090.2],['SBLD84',1085,1.88,82764,1201,1040,1085],['SBLD89',1241,-2.44,25,1450,1205,1241],['SCB',657.1,-0.21,8064,712.6,594.9,655.1],['SCBD',1194.8,3,50,1236,1080,1170],['SDBD87',1115,0,75,1196.2,1045.7,1120],['SEF',9.97,-1.29,9070,11.53,8.6,10],['SFCL',375.8,0.51,6971,565,359.4,370],['SFEF',10.02,-1.67,500,11.12,8.82,9.9],['SFMF',10.8,0,1100,11.74,9.4,10.6],['SGHC',338,0.3,8417,501.8,296,347.1],['SGIC',501,-0.5,29736,632,437,510],['SHEL',314.3,-0.54,114094,361,262,322],['SHINE',417,0.24,16756,499,382,416],['SHINED',1097,-0.3,120,1200,1000,1096.1],['SHIVM',632,0,52384,730,507.2,639.9],['SHL',503.1,-0.12,18018,619,464,505],['SHLB',1528,0.78,135,2170,1415,1501],['SHPC',516,0.02,27399,684.9,475,524.5],['SICL',656.6,1.33,38555,828,588.8,645.1],['SIFC',572.6,2.25,83612,687.4,459,550],['SIGS2',10.8,2.86,10500,11.7,8.9,10.8],['SIGS3',10.6,0.47,59750,11.58,8.5,10.65],['SIKLES',602.9,0.65,4051,1177,540,595],['SINDU',721.9,2.24,2180,975,608,703.2],['SIPD',640,-1.3,3860,1216.8,284.3,648],['SJCL',296,-1.33,11328,365,267,300],['SJLIC',438,-0.23,15819,489.9,390,417.1],['SKBBL',765.8,-0.16,4189,999,750,775],['SKHEL',985,0.5,4181,2069.4,284.3,980],['SKHL',920.9,-1.51,7336,1360,300,981.7],['SLBBL',830,0,6521,1155,799.9,817],['SLBSL',1209,0.17,591,1694.9,1164,1230],['SLCF',10.03,-0.2,11100,11.99,8.6,10.01],['SMATA',779.6,0.08,4232,1382,734.1,777.7],['SMB',1750,0.29,1146,2600,1699,1760],['SMFBS',1520,-0.98,711,2026,1490,1535],['SMH',585.3,-0.46,10247,1024.8,541,615],['SMHL',501,-0.6,32616,1230,443,504],['SMJC',475,0,50830,679.3,430,475],['SMPDA',833,-0.6,1949,1155,821,838],['SNLI',454,-1.39,12193,538,411.6,458],['SNORL',600.6,14.99,180,600.6,298.7,537.9],['SOHL',655,-0.76,107890,875.5,300,655.09],['SONA',448,0.9,66955,523.3,398,440],['SPC',459.9,-0.24,14607,591,441,457.1],['SPDL',398.3,-0.67,45051,474,353.1,405],['SPHL',632,0.32,84628,736,477.1,600],['SPIL',740.7,0.64,6116,894.5,625,700],['SPL',711,1.51,1220,1035,670.4,691.3],['SRLI',410,2.53,29563,451.1,363.9,395.4],['SSHL',201.1,-1.61,81816,313.8,151,203],['STC',5450,-0.9,550,6335.9,4832,5400.3],['SWASTIK',2379,0.3,874,3400,391.7,2380],['SWBBL',697.8,-0.6,13743,1046.5,667,693.1],['SWMF',665,-0.89,1918,868.1,641,664.1],['SYPNL',1355,-0.15,14413,2255.9,319.8,1289.2],['TAMOR',444,-0.45,20600,576,396.4,442.2],['TPC',360,0.22,1178,450,270.1,365],['TPKHL',596.6,-3.49,41840,772.5,300,618],['TRH',770,0.92,2202,1086.3,681.1,741],['TSHL',435.1,-2.22,2126,989,418.1,435],['TTL',750,0,4615,1262.8,366.1,750],['TVCL',494.8,2.02,4235,689,377.6,485],['UAIL',463.9,-0.24,19610,627,422.1,452.5],['UHEWA',587,-0.51,26170,692.6,521,619],['ULBSL',2798,-0.25,210,4325,2725,2725],['ULHC',496.8,15,31541,599,402,420],['UMHL',577.2,-0.48,14624,706,495,583],['UMRH',517.8,-0.98,8505,675,512,520.5],['UNHPL',388,-1.27,8405,571,372.3,393],['UNL',46725,0.05,60,50724,45000,46900],['UNLB',1324.9,-0.12,453,2480,1280,1287],['UPCL',372.6,4.99,74910,463,326.9,362],['UPPER',194,-0.26,41920,242.6,166,194.5],['USHEC',500,1.63,3544,580.2,420.6,487],['USHL',534.1,-0.74,3840,945,529,565],['USLB',1230,-1.2,1053,2750,1213,1236.1],['VLBS',696,1.59,2609,1008,660.8,685],['VLUCL',448,-0.86,409,664.8,423.1,451],['WNLB',1353,-1.24,180,2561,1242.1,1370],['YMHL',663.2,-3.74,35070,797.6,300,715],
+];
+const STOCKS=RAW.map(r=>({sym:r[0],ltp:r[1],chg:r[2],vol:r[3],hi52:r[4],lo52:r[5],open:r[6],bvps:BV[r[0]]||null,sec:getSec(r[0])}));
+let sortKey='vol',pg=1;const PER=25;
+function setSort(k){sortKey=k;document.getElementById('sort').value=k;go();}
+function fv(v){return v>=100000?`${(v/100000).toFixed(1)}L`:v>=1000?`${(v/1000).toFixed(0)}K`:v;}
+function w52p(l,h,lo){const r=h-lo;return r>0?(l-lo)/r:0.5;}
+function ltpB(l){return l<200?'u200':l<500?'200-500':l<1000?'500-1000':'1000p';}
+function pbvBkt(l,b){if(!b)return null;const r=l/b;return r<1?'u1':r<2?'1-2':r<5?'2-5':'5p';}
+function pbvCol(r){return r<1?['#E1F5EE','#0F6E56']:r<2?['#E6F1FB','#185FA5']:r<5?['#FAEEDA','#BA7517']:['#FAECE7','#993C1D'];}
+function saveScreenerLive(){
+  try{
+    var out={};
+    STOCKS.forEach(function(s){out[s.sym]={ltp:s.ltp,chg:s.chg,vol:s.vol,open:s.open};});
+    localStorage.setItem('twv_screener_live',JSON.stringify({data:out,date:new Date().toISOString().split('T')[0]}));
+  }catch(e){}
+}
+function loadScreenerLive(){
+  try{
+    var raw=localStorage.getItem('twv_screener_live');
+    if(!raw)return;
+    var saved=JSON.parse(raw);
+    var bySym={};
+    STOCKS.forEach(function(s){bySym[s.sym]=s;});
+    var count=0;
+    Object.keys(saved.data).forEach(function(sym){
+      if(bySym[sym]){
+        var d=saved.data[sym];
+        bySym[sym].ltp=d.ltp;bySym[sym].chg=d.chg;bySym[sym].vol=d.vol;bySym[sym].open=d.open;
+        count++;
+      }
+    });
+    if(count>0){
+      var status=document.getElementById('screener-csv-status');
+      status.textContent='\u2713 Restored last import ('+saved.date+', '+count+' scrips) \u2014 re-import only if you have newer data';
+      status.style.color='#7ec8f7';
+    }
+  }catch(e){}
+}
+function importScreenerCSV(file){
+  if(!file)return;
+  var status=document.getElementById('screener-csv-status');
+  status.textContent='Reading...';
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var lines=e.target.result.split('\n').filter(function(l){return l.trim();});
+      // Find the header row (has "Symbol" in it) — live-data exports often have blank/title rows above it
+      var headerIdx=-1,header=[];
+      for(var i=0;i<Math.min(lines.length,6);i++){
+        var cells=lines[i].split(',').map(function(c){return c.trim().toLowerCase();});
+        if(cells.indexOf('symbol')>-1){headerIdx=i;header=cells;break;}
+      }
+      if(headerIdx===-1){status.textContent='\u26a0 No Symbol column found';status.style.color='#e74c3c';return;}
+      var col={};header.forEach(function(h,i){if(h&&col[h]===undefined)col[h]=i;});
+      var symI=col['symbol'],ltpI=col['ltp'],pctI=col['% change'],openI=col['open'],volI=col['volume'];
+      var count=0;
+      var bySym={};
+      STOCKS.forEach(function(s){bySym[s.sym]=s;});
+      lines.slice(headerIdx+1).forEach(function(line){
+        var p=line.split(',');
+        var sym=(p[symI]||'').trim().toUpperCase();
+        if(!sym||!bySym[sym])return;
+        var ltp=parseFloat(p[ltpI]);
+        var pct=parseFloat(p[pctI]);
+        var open=parseFloat(p[openI]);
+        var vol=parseFloat((p[volI]||'').replace(/,/g,''));
+        if(isNaN(ltp))return;
+        var s=bySym[sym];
+        s.ltp=ltp;
+        if(!isNaN(pct))s.chg=pct;
+        if(!isNaN(open))s.open=open;
+        if(!isNaN(vol))s.vol=vol;
+        count++;
+      });
+      if(count>0){
+        status.textContent='\u2713 '+count+' scrips refreshed with today\u2019s LTP';
+        status.style.color='#1D9E75';
+        saveScreenerLive();
+        go();
+      } else {
+        status.textContent='\u26a0 No matching symbols found';
+        status.style.color='#e74c3c';
+      }
+    }catch(err){
+      status.textContent='\u26a0 '+err.message;
+      status.style.color='#e74c3c';
+    }
+  };
+  reader.readAsText(file);
+}
+function getFilteredStocks(){
+  const q=document.getElementById('q').value.toLowerCase().trim();
+  const sec=document.getElementById('f-sec').value,chg=document.getElementById('f-chg').value;
+  const ltp=document.getElementById('f-ltp').value,w=document.getElementById('f-52').value;
+  const vol=document.getElementById('f-vol').value,pbv=document.getElementById('f-pbv').value;
+  const sk=document.getElementById('sort').value||sortKey;
+  let d=STOCKS.filter(s=>{
+    if(q&&!s.sym.toLowerCase().includes(q))return false;
+    if(sec&&s.sec!==sec)return false;
+    if(chg==='up'&&s.chg<=0)return false;if(chg==='down'&&s.chg>=0)return false;
+    if(chg==='big'&&s.chg>-3)return false;if(chg==='surge'&&s.chg<3)return false;
+    if(ltp&&ltpB(s.ltp)!==ltp)return false;
+    const p=w52p(s.ltp,s.hi52,s.lo52);
+    if(w==='nearhi'&&p<0.9)return false;if(w==='nearlow'&&p>0.1)return false;
+    if(w==='mid'&&(p<0.3||p>0.7))return false;
+    if(vol==='h'&&s.vol<50000)return false;if(vol==='m'&&(s.vol<10000||s.vol>=50000))return false;if(vol==='l'&&s.vol>=10000)return false;
+    if(pbv){const b=pbvBkt(s.ltp,s.bvps);if(b!==pbv)return false;}
+    return true;
+  });
+  if(sk==='sym')d.sort((a,b)=>a.sym.localeCompare(b.sym));
+  else if(sk==='ltp')d.sort((a,b)=>b.ltp-a.ltp);
+  else if(sk==='chg')d.sort((a,b)=>b.chg-a.chg);
+  else if(sk==='range')d.sort((a,b)=>w52p(b.ltp,b.hi52,b.lo52)-w52p(a.ltp,a.hi52,a.lo52));
+  else if(sk==='pbv')d.sort((a,b)=>(a.bvps?a.ltp/a.bvps:99)-(b.bvps?b.ltp/b.bvps:99));
+  else d.sort((a,b)=>b.vol-a.vol);
+  return d;
+}
+function exportScreenerExcel(){
+  if(typeof XLSX==='undefined'){document.getElementById('screener-csv-status').textContent='\u26a0 Excel library not loaded';return;}
+  const d=getFilteredStocks();
+  const rows=[['TRADE WITH VIBES \u2014 NEPSE Screener Export',new Date().toISOString().split('T')[0]],[],
+    ['Symbol','LTP','Chg%','Volume','52W Low','52W High','BVPS','P/BV','Open','Sector']];
+  d.forEach(s=>{
+    rows.push([s.sym,s.ltp,s.chg,s.vol,s.lo52,s.hi52,s.bvps||'',s.bvps?(s.ltp/s.bvps).toFixed(2):'',s.open,s.sec]);
+  });
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:10},{wch:10},{wch:8},{wch:10},{wch:10},{wch:10},{wch:8},{wch:8},{wch:10},{wch:20}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Screener');
+  XLSX.writeFile(wb,'TWV_Screener_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  const st=document.getElementById('screener-csv-status');
+  st.textContent='\u2713 '+d.length+' scrips exported to Excel';
+  st.style.color='#1D9E75';
+}
+function go(){
+  const q=document.getElementById('q').value.toLowerCase().trim();
+  const sec=document.getElementById('f-sec').value,chg=document.getElementById('f-chg').value;
+  const ltp=document.getElementById('f-ltp').value,w=document.getElementById('f-52').value;
+  const vol=document.getElementById('f-vol').value,pbv=document.getElementById('f-pbv').value;
+  const sk=document.getElementById('sort').value||sortKey;
+  let d=STOCKS.filter(s=>{
+    if(q&&!s.sym.toLowerCase().includes(q))return false;
+    if(sec&&s.sec!==sec)return false;
+    if(chg==='up'&&s.chg<=0)return false;if(chg==='down'&&s.chg>=0)return false;
+    if(chg==='big'&&s.chg>-3)return false;if(chg==='surge'&&s.chg<3)return false;
+    if(ltp&&ltpB(s.ltp)!==ltp)return false;
+    const p=w52p(s.ltp,s.hi52,s.lo52);
+    if(w==='nearhi'&&p<0.9)return false;if(w==='nearlow'&&p>0.1)return false;
+    if(w==='mid'&&(p<0.3||p>0.7))return false;
+    if(vol==='h'&&s.vol<50000)return false;if(vol==='m'&&(s.vol<10000||s.vol>=50000))return false;if(vol==='l'&&s.vol>=10000)return false;
+    if(pbv){const b=pbvBkt(s.ltp,s.bvps);if(b!==pbv)return false;}
+    return true;
+  });
+  if(sk==='sym')d.sort((a,b)=>a.sym.localeCompare(b.sym));
+  else if(sk==='ltp')d.sort((a,b)=>b.ltp-a.ltp);
+  else if(sk==='chg')d.sort((a,b)=>b.chg-a.chg);
+  else if(sk==='range')d.sort((a,b)=>w52p(b.ltp,b.hi52,b.lo52)-w52p(a.ltp,a.hi52,a.lo52));
+  else if(sk==='pbv')d.sort((a,b)=>(a.bvps?a.ltp/a.bvps:99)-(b.bvps?b.ltp/b.bvps:99));
+  else d.sort((a,b)=>b.vol-a.vol);
+  const tot=d.length,pages=Math.max(1,Math.ceil(tot/PER));
+  if(pg>pages)pg=1;
+  const sl=d.slice((pg-1)*PER,pg*PER);
+  const g=d.filter(s=>s.chg>0).length,l=d.filter(s=>s.chg<0).length;
+  const avg=(d.reduce((a,s)=>a+s.chg,0)/Math.max(1,d.length)).toFixed(2);
+  document.getElementById('summary').innerHTML=`<div class="smc"><div class="sv">${tot}</div><div class="sl">Scrips</div></div><div class="smc"><div class="sv" style="color:#1D9E75">${g}</div><div class="sl">Gainers</div></div><div class="smc"><div class="sv" style="color:#D85A30">${l}</div><div class="sl">Losers</div></div><div class="smc"><div class="sv" style="${parseFloat(avg)>=0?'color:#1D9E75':'color:#D85A30'}">${parseFloat(avg)>=0?'+':''}${avg}%</div><div class="sl">Avg Chg</div></div>`;
+  const tbody=document.getElementById('tbody');
+  if(!sl.length)tbody.innerHTML=`<tr><td colspan="9"><div class="nr">No scrips match</div></td></tr>`;
+  else tbody.innerHTML=sl.map(s=>{
+    const pos=Math.round(w52p(s.ltp,s.hi52,s.lo52)*100);
+    const cls=s.chg>0?'pos':s.chg<0?'neg':'neu',sign=s.chg>0?'+':'';
+    const[bg,fg]=SC[s.sec]||['#F1EFE8','#5F5E5A'];
+    const bc=pos>70?'#1D9E75':pos<30?'#D85A30':'#185FA5';
+    let bvCell='<span style="color:var(--color-text-tertiary)">—</span>',pbvCell='<span style="color:var(--color-text-tertiary)">—</span>';
+    if(s.bvps){const r=s.ltp/s.bvps;const[pb,pf]=pbvCol(r);bvCell=`${s.bvps.toLocaleString()}`;pbvCell=`<span class="pbv" style="background:${pb};color:${pf}">${r.toFixed(1)}x</span>`;}
+    return`<tr class="clickrow" onclick="goToScrip('${s.sym}')" style="cursor:pointer"><td><span class="sym">${s.sym}</span></td><td style="font-weight:500">${s.ltp.toLocaleString()}</td><td class="${cls}">${sign}${s.chg.toFixed(2)}%</td><td style="color:var(--color-text-secondary)">${fv(s.vol)}</td><td><div style="font-size:9px;color:var(--color-text-secondary)">${s.lo52.toLocaleString()} – ${s.hi52.toLocaleString()}</div><div class="bw"><div class="bf" style="width:${pos}%;background:${bc}"></div></div></td><td style="font-size:9px;color:var(--color-text-secondary)">${bvCell}</td><td>${pbvCell}</td><td style="color:var(--color-text-secondary)">${s.open.toLocaleString()}</td><td><span class="bdg" style="background:${bg};color:${fg};cursor:pointer" onclick="editSector('${s.sym}',event)" title="Click to edit sector">${s.sec} &#9998;</span></td></tr>`;
+  }).join('');
+  document.getElementById('cnt').textContent=`${tot} scrips · page ${pg}/${pages}`;
+  document.getElementById('pgr').innerHTML=pages>1?`<button onclick="gp(1)" ${pg===1?'disabled':''}>«</button><button onclick="gp(${pg-1})" ${pg===1?'disabled':''}>‹</button><span class="pi">Page ${pg} of ${pages}</span><button onclick="gp(${pg+1})" ${pg===pages?'disabled':''}>›</button><button onclick="gp(${pages})" ${pg===pages?'disabled':''}>»</button>`:'';
+  const chips=[];
+  if(sec)chips.push({l:`Sector: ${sec}`,c:()=>{document.getElementById('f-sec').value='';go()}});
+  if(chg)chips.push({l:{up:'Gainers',down:'Losers',big:'Big Drop',surge:'Surge'}[chg],c:()=>{document.getElementById('f-chg').value='';go()}});
+  if(ltp)chips.push({l:`Price: ${ltp}`,c:()=>{document.getElementById('f-ltp').value='';go()}});
+  if(pbv)chips.push({l:{u1:'Below Book','1-2':'P/BV 1-2x','2-5':'P/BV 2-5x','5p':'>5x'}[pbv],c:()=>{document.getElementById('f-pbv').value='';go()}});
+  if(w)chips.push({l:w==='nearhi'?'Near 52W High':w==='nearlow'?'Near 52W Low':'Mid Range',c:()=>{document.getElementById('f-52').value='';go()}});
+  if(vol)chips.push({l:vol==='h'?'High Vol':vol==='m'?'Mid Vol':'Low Vol',c:()=>{document.getElementById('f-vol').value='';go()}});
+  document.getElementById('chips').innerHTML=chips.map((_,i)=>`<span class="chip">${chips[i].l}<button onclick="cc(${i})">x</button></span>`).join('');
+  window.__CC=chips.map(c=>c.c);
+}
+function gp(n){pg=n;go();}function cc(i){window.__CC[i]();}
+loadScreenerLive();
+go();
+</script>
+
+</body>
+</html>

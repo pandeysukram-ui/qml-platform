@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>NEPSE Sector Drill-Down — Trade With Vibes</title>
+<style>body{background:#080c12;margin:0;padding:6px;}</style>
+</head>
+<body>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Share+Tech+Mono&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+.w{background:#080c12;border-radius:10px;padding:14px;color:#b0bac8;font-family:'Chakra Petch',sans-serif;}
+.scanline{position:relative;overflow:hidden;}
+.scanline::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,170,0.008) 2px,rgba(0,255,170,0.008) 4px);pointer-events:none;}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #1a2535;padding-bottom:10px;margin-bottom:10px;}
+.htitle{font-size:12px;font-weight:700;color:#f5c518;letter-spacing:2px;}
+.hsub{font-size:9px;color:#6a8aaa;letter-spacing:1px;margin-top:2px;font-family:'Share Tech Mono',monospace;}
+
+/* ── 3-DAY STRIP (shared style for both NEPSE and Sector) ── */
+.strip-label{font-size:9px;color:#6a8aaa;letter-spacing:1.5px;margin-bottom:5px;font-family:'Share Tech Mono',monospace;}
+.day-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px;}
+.day-card{background:#0d1520;border:1px solid #1a2535;border-radius:6px;padding:8px 10px;position:relative;overflow:hidden;}
+.day-card.today{border-color:#f5c51866;}
+.dc-label{font-size:8px;color:#3a5a6a;letter-spacing:1.5px;margin-bottom:4px;font-family:'Share Tech Mono',monospace;}
+.dc-val{font-size:13px;font-weight:700;font-family:'Share Tech Mono',monospace;margin-bottom:2px;}
+.dc-chg{font-size:10px;font-weight:700;font-family:'Share Tech Mono',monospace;margin-bottom:2px;}
+.dc-sub{font-size:8px;font-family:'Share Tech Mono',monospace;color:#3a5a6a;line-height:1.7;}
+.dc-bar{position:absolute;bottom:0;left:0;height:2px;border-radius:0 0 6px 6px;}
+.dc-trend{font-size:8px;font-family:'Share Tech Mono',monospace;margin-top:3px;}
+
+/* SECTOR BREADCRUMB */
+.breadcrumb{display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:10px;font-family:'Share Tech Mono',monospace;flex-wrap:wrap;}
+.bc{cursor:pointer;padding:3px 8px;border-radius:3px;border:1px solid transparent;transition:all 0.2s;color:#3a5a6a;}
+.bc.active{color:#f5c518;border-color:#f5c51844;background:#1a1500;}
+.bc.link{color:#8ab0c8;}.bc.link:hover{color:#f5c518;border-color:#2a3a5a;}
+.bc-sep{color:#1e3a52;}
+
+/* SECTOR BUTTONS */
+.sec-selector{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;padding:8px;background:#0d1828;border:1px solid #1e3a52;border-radius:6px;}
+.sec-btn{background:#162030;border:1px solid #2a4a6a;border-left-width:3px;border-radius:4px;padding:5px 9px;font-size:9px;font-weight:600;color:#a0c4d8;cursor:pointer;letter-spacing:1px;transition:all 0.18s;font-family:'Chakra Petch',sans-serif;white-space:nowrap;}
+.sec-btn:hover{background:#1e3a52;border-color:#4a8aaa;color:#e0f0ff;}
+.sec-btn.on{background:#f5c518;border-color:#f5c518;color:#000;font-weight:700;}
+
+/* SEC INFO BAR */
+.sec-info{background:#0d1520;border:1px solid #1a2535;border-radius:6px;padding:8px 12px;margin-bottom:10px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
+.si-item{font-size:10px;font-family:'Share Tech Mono',monospace;}
+.si-label{color:#5a8aaa;font-size:8px;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ADD ROW */
+.add-row{background:#0d1520;border:1px solid #1a2535;border-radius:6px;padding:8px 10px;margin-bottom:10px;}
+.add-title{font-size:9px;color:#f5c518;letter-spacing:1.5px;margin-bottom:7px;}
+.add-fields{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;}
+.ag{display:flex;flex-direction:column;gap:2px;}
+.al{font-size:8px;color:#5a8aaa;letter-spacing:1px;font-family:'Share Tech Mono',monospace;}
+.fi{background:#060a10;border:1px solid #2a3a4a;border-radius:3px;padding:4px 7px;font-size:10px;color:#e0e8f0;font-family:'Share Tech Mono',monospace;outline:none;transition:border 0.2s;}
+.fi:focus{border-color:#f5c518;}
+.add-btn{background:#0d1a00;border:1px solid #3a7a00;border-radius:4px;padding:5px 14px;font-size:9px;font-family:'Chakra Petch',sans-serif;color:#00e5a0;cursor:pointer;font-weight:600;}
+.add-btn:hover{background:#1a3000;border-color:#00e5a0;}
+.back-btn{background:#0a1520;border:1px solid #1e3a52;border-radius:4px;padding:4px 12px;font-size:9px;font-family:'Chakra Petch',sans-serif;color:#8ab0c8;cursor:pointer;transition:all 0.2s;}
+.back-btn:hover{border-color:#f5c518;color:#f5c518;}
+
+/* SIGNALS */
+.sig-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;}
+.sig{background:#0d1520;border:1px solid #1a2535;border-radius:6px;padding:7px;text-align:center;}
+.sl{font-size:8px;color:#5a8aaa;letter-spacing:1px;margin-bottom:3px;}
+.sv{font-size:13px;font-weight:700;font-family:'Share Tech Mono',monospace;}
+.ss{font-size:8px;color:#4a6a7a;margin-top:2px;}
+
+/* TABS */
+.tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+.tab{background:#0d1520;border:1px solid #1a2535;border-radius:4px;padding:5px 12px;font-size:9px;color:#6a8aaa;cursor:pointer;letter-spacing:1px;transition:all 0.2s;font-family:'Chakra Petch',sans-serif;font-weight:600;}
+.tab:hover{border-color:#2a4a5a;color:#aaa;}
+.tab.on{border-color:#f5c518;color:#f5c518;background:#181500;}
+.panel{display:none;}.panel.on{display:block;}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;}
+.tbl{width:100%;border-collapse:collapse;font-size:10px;}
+.tbl thead tr{background:#0d1a28;}
+.tbl th{font-size:9px;color:#f5c518;letter-spacing:1px;text-align:left;padding:7px 8px;border-bottom:2px solid #f5c51844;font-weight:700;white-space:nowrap;}
+.tbl td{padding:6px 8px;border-bottom:1px solid #0f1820;vertical-align:middle;}
+.tbl tr:nth-child(even) td{background:#0a121e;}
+.tbl tr:hover td{background:#0e1a28;}
+.tbl tr.clickrow{cursor:pointer;}
+.tbl tr.clickrow:hover td{background:#111f2e;}
+.sym-cell{font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:700;color:#c8d8e8;}
+
+/* EDITABLE */
+.edit-cell{position:relative;}
+.ev{font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:700;background:transparent;border:1px solid #1e3a52;border-radius:3px;padding:3px 5px;width:76px;outline:none;transition:all 0.15s;cursor:pointer;}
+.ev:focus{border-color:#f5c518;background:#111800;}
+.ev:hover{border-color:#f5c51866;}
+.edit-hint{font-size:7px;color:#3a6a7a;position:absolute;bottom:-11px;left:2px;display:none;white-space:nowrap;}
+.edit-cell:hover .edit-hint{display:block;}
+
+/* PHASE */
+.ltp-lead{color:#00ff99;}.ltp-weak{color:#ffd700;}.ltp-imp{color:#33ccff;}.ltp-lag{color:#ff4444;}
+.chg-pos{color:#00ff99;font-weight:600;font-family:'Share Tech Mono',monospace;}
+.chg-neg{color:#ff4444;font-weight:600;font-family:'Share Tech Mono',monospace;}
+.chg-neu{color:#778899;font-family:'Share Tech Mono',monospace;}
+.rs-pos{color:#00e5a0;font-weight:600;font-family:'Share Tech Mono',monospace;}
+.rs-neg{color:#ff6060;font-weight:600;font-family:'Share Tech Mono',monospace;}
+.tag{font-size:8px;padding:2px 7px;border-radius:3px;letter-spacing:0.5px;font-weight:600;font-family:'Chakra Petch',sans-serif;white-space:nowrap;}
+.tag-lead{background:#00ff9922;color:#00ff99;border:1px solid #00ff9955;}
+.tag-weak{background:#ffd70022;color:#ffd700;border:1px solid #ffd70055;}
+.tag-lag{background:#ff444422;color:#ff4444;border:1px solid #ff444455;}
+.tag-imp{background:#33ccff22;color:#33ccff;border:1px solid #33ccff55;}
+.rb-wrap{display:flex;align-items:center;gap:4px;}
+.rb-track{background:#0a1220;border-radius:2px;height:5px;width:40px;flex-shrink:0;}
+.rb-fill{height:100%;border-radius:2px;}
+.ratio-val{font-family:'Share Tech Mono',monospace;font-size:10px;color:#4a8aaa;}
+
+/* QUAD */
+.quad-box{background:#0d1520;border:1px solid #1a2535;border-radius:6px;padding:10px;}
+.quad-leg{display:flex;gap:12px;flex-wrap:wrap;margin-top:7px;}
+.ql{font-size:9px;display:flex;align-items:center;gap:4px;font-family:'Share Tech Mono',monospace;}
+
+/* RANK */
+.rank-box{background:#0d1520;border:1px solid #1a2535;border-radius:6px;padding:12px;}
+.rk-row{margin-bottom:11px;padding-bottom:10px;border-bottom:1px solid #0d1822;}
+.rk-row:last-child{border-bottom:none;}
+
+.del-btn{background:none;border:none;color:#2a4a5a;font-size:13px;cursor:pointer;padding:0 2px;transition:color 0.2s;}
+.del-btn:hover{color:#ff4444;}
+.no-scrip{text-align:center;padding:24px;font-size:9px;color:#3a6a7a;font-family:'Share Tech Mono',monospace;line-height:2.2;}
+.print-btn{background:#0a1a00;border:1px solid #2a5a00;border-radius:4px;padding:4px 12px;font-size:9px;font-family:'Chakra Petch',sans-serif;color:#00e5a0;cursor:pointer;}
+.updated-flash{animation:flash 0.5s;}
+@keyframes flash{0%{background:#1e3200;}100%{background:transparent;}}
+.footer{text-align:center;padding-top:10px;border-top:1px solid #1a2535;margin-top:12px;font-size:10px;}
+.footer a{color:#f5c518;text-decoration:none;font-family:'Chakra Petch',sans-serif;font-weight:700;letter-spacing:2px;}
+@media print{
+  .w{background:#fff!important;color:#111!important;}
+  .htitle,.strip-label{color:#111!important;}
+  .day-card{background:#f5f5f5!important;border-color:#ccc!important;}
+  .tbl th{background:#222!important;color:#fff!important;}
+  .tbl td{color:#111!important;border-color:#ddd!important;}
+  .tbl tr:nth-child(even) td{background:#f9f9f9!important;}
+  .add-row,.print-btn,.del-btn,.edit-hint,.back-btn{display:none!important;}
+  .ev{border:1px solid #ccc!important;background:#fff!important;color:#111!important;}
+  .panel{display:block!important;}.tabs{display:none!important;}
+  .tag-lead{background:#d0ffe8!important;color:#006633!important;}
+  .tag-weak{background:#fff8d0!important;color:#8a6000!important;}
+  .tag-lag{background:#ffd0d0!important;color:#880000!important;}
+  .tag-imp{background:#d0eeff!important;color:#004488!important;}
+  .scanline::after{display:none!important;}
+}
+</style>
+
+<div class="w scanline">
+  <div class="hdr">
+    <div>
+      <div class="htitle">▸ NEPSE RATIO DRILL-DOWN</div>
+      <div class="hsub">INDEX → SECTOR (3-DAY TRACK) → SCRIPS · EDITABLE · EOD</div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button class="print-btn" onclick="window.print()">⬇ EXPORT</button>
+      <div style="font-size:9px;font-family:'Share Tech Mono',monospace;text-align:right;">
+        <span id="hdr-nepse-price" style="color:#00ff99;font-weight:700;">NEPSE 2,736.17</span><br>
+        <span id="hdr-nepse-chg" style="color:#00e5a0;">▲ +0.09% TODAY</span>
+      </div>
+      <div id="qml-link-badge" style="display:none;font-size:8px;font-family:'Share Tech Mono',monospace;background:rgba(51,204,255,.1);color:#33ccff;border:1px solid rgba(51,204,255,.3);border-radius:10px;padding:3px 8px;">\u26a1 linked with QML</div>
+    </div>
+  </div>
+
+  <!-- NEPSE 3-DAY -->
+  <div class="strip-label">▸ NEPSE INDEX — 3 DAY TRACK</div>
+  <div class="day-strip">
+    <div class="day-card">
+      <div class="dc-bar" style="width:100%;background:#ff4444;"></div>
+      <div class="dc-label">DAY 1</div>
+      <div class="dc-val" style="color:#ff4444;">2,735.14</div>
+      <div class="dc-chg" style="color:#ff4444;">▼ -20.27 (-0.73%)</div>
+      <div class="dc-sub">ADV 43 · DEC 222 · UNC 12<br>T/O Rs 4.08B · VOL 9.24M</div>
+    </div>
+    <div class="day-card">
+      <div class="dc-bar" style="width:100%;background:#ff8844;"></div>
+      <div class="dc-label">DAY 2</div>
+      <div class="dc-val" style="color:#ff8844;">2,733.59</div>
+      <div class="dc-chg" style="color:#ff8844;">▼ -1.54 (-0.05%)</div>
+      <div class="dc-sub">ADV 105 · DEC 151 · UNC 15<br>T/O Rs 6.44B · VOL 12.38M</div>
+    </div>
+    <div class="day-card today">
+      <div class="dc-bar" style="width:100%;background:#00ff99;" id="dc-today-bar"></div>
+      <div class="dc-label">TODAY <span style="color:#f5c518;font-size:8px;">◀ TODAY</span></div>
+      <div class="dc-val" id="dc-today-val" style="color:#00ff99;">2,736.17</div>
+      <div class="dc-chg" id="dc-today-chg" style="color:#00ff99;">▲ +2.57 (+0.09%)</div>
+      <div class="dc-sub" id="dc-today-sub">ADV 128 · DEC 134 · UNC 10<br>T/O Rs 4.30B · VOL 9.28M</div>
+    </div>
+  </div>
+
+  <div class="breadcrumb" id="breadcrumb"></div>
+  <div id="main-content"></div>
+
+  <div class="footer"><a href="https://tradevibes.blogspot.com/">▸ TRADE WITH VIBES</a></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const NEPSE={close:2736.17,chg:0.09};
+
+// ── SECTOR DATA — 3 days ────────────────────────────────────────
+const SECTORS=[
+  {name:'BANKING',     abbr:'BNK',
+   d8:{close:1448.76,chg:-0.23}, d9:{close:1445.56,chg: 0.00}, d10:{close:1445.57,chg: 0.00}},
+  {name:'DEV BANK',    abbr:'DBK',
+   d8:{close:5882.17,chg:-0.39}, d9:{close:5843.53,chg:-0.06}, d10:{close:5855.97,chg: 0.21}},
+  {name:'FINANCE',     abbr:'FIN',
+   d8:{close:2580.90,chg: 1.20}, d9:{close:2531.27,chg:-1.01}, d10:{close:2533.40,chg: 0.08}},
+  {name:'HTL & TOUR',  abbr:'HTL',
+   d8:{close:7780.57,chg: 0.27}, d9:{close:7713.55,chg:-0.71}, d10:{close:7755.30,chg: 0.54}},
+  {name:'HYDROPOWER',  abbr:'HYD',
+   d8:{close:3826.73,chg:-0.39}, d9:{close:3805.49,chg: 0.01}, d10:{close:3830.54,chg: 0.65}},
+  {name:'INVESTMENT',  abbr:'INV',
+   d8:{close:101.44, chg: 0.01}, d9:{close:100.90, chg:-0.12}, d10:{close:100.82, chg:-0.08}},
+  {name:'LIFE INS',    abbr:'LIF',
+   d8:{close:12584.11,chg:-0.54},d9:{close:12536.01,chg:-0.37},d10:{close:12495.25,chg:-0.32}},
+  {name:'MFG & PROC',  abbr:'MFG',
+   d8:{close:11021.42,chg: 0.00},d9:{close:11000.70,chg: 0.26},d10:{close:11021.22,chg: 0.18}},
+  {name:'MICROFINANCE',abbr:'MFI',
+   d8:{close:4774.94,chg:-0.62}, d9:{close:4770.69,chg:-0.18}, d10:{close:4770.25,chg: 0.00}},
+  {name:'MUTUAL FUND', abbr:'MUT',
+   d8:{close:21.83,  chg:-0.75}, d9:{close:21.83,  chg:-0.15}, d10:{close:21.83,  chg: 0.01}},
+  {name:'NON-LIFE INS',abbr:'NLI',
+   d8:{close:11436.22,chg:-0.58},d9:{close:11360.98,chg:-0.41},d10:{close:11332.64,chg:-0.24}},
+  {name:'OTHERS',      abbr:'OTH',
+   d8:{close:2063.28,chg:-1.00}, d9:{close:2058.92,chg: 0.29}, d10:{close:2058.20,chg:-0.03}},
+  {name:'TRADING',     abbr:'TRD',
+   d8:{close:3474.76,chg:-1.77}, d9:{close:3461.40,chg:-0.38}, d10:{close:3446.49,chg:-0.43}},
+];
+
+// NEPSE chg per day for RS calculation
+const NEPSE_D={d8:-0.73, d9:-0.05, d10:0.09};
+
+const SCRIPS={};
+// Auto-fill data: every scrip belonging to each sector (from the live screener classification)
+const SECTOR_AUTOFILL={"MFG & PROC":[{sym:"ACLBSL",ltp:960,chg:0.3},{sym:"ALBSL",ltp:1099.6,chg:2.1},{sym:"BANDIPUR",ltp:820,chg:-0.62},{sym:"BBC",ltp:4475,chg:-0.16},{sym:"BUNGAL",ltp:652,chg:2.35},{sym:"CHDC",ltp:2269,chg:0.12},{sym:"CREST",ltp:1310,chg:9.53},{sym:"CYCL",ltp:1455,chg:-1.01},{sym:"HFIN",ltp:735,chg:-0.43},{sym:"MAKAR",ltp:496.6,chg:-0.68},{sym:"MDB",ltp:620.4,chg:0.32},{sym:"MFIL",ltp:804.9,chg:1.89},{sym:"RSML",ltp:3274,chg:-3.71},{sym:"SHIVM",ltp:632,chg:0},{sym:"SMATA",ltp:779.6,chg:0.08},{sym:"SMB",ltp:1750,chg:0.29},{sym:"STC",ltp:5450,chg:-0.9},{sym:"UNL",ltp:46725,chg:0.05}],"BANKING":[{sym:"ADBL",ltp:317,chg:-0.28},{sym:"CZBIL",ltp:202.5,chg:-0.44},{sym:"EBL",ltp:709.4,chg:0.06},{sym:"GBIME",ltp:238.1,chg:-0.25},{sym:"HBL",ltp:201,chg:0},{sym:"KBL",ltp:215.3,chg:2.48},{sym:"MBL",ltp:249.8,chg:2.8},{sym:"MBLPO",ltp:132,chg:0},{sym:"NABIL",ltp:535,chg:-0.71},{sym:"NBL",ltp:268,chg:-0.67},{sym:"NICA",ltp:346,chg:-1.23},{sym:"NIMB",ltp:197.3,chg:-0.35},{sym:"NIMBPO",ltp:145.5,chg:-3.51},{sym:"NMB",ltp:241,chg:1.18},{sym:"PCBL",ltp:236.4,chg:1.07},{sym:"PRVU",ltp:197,chg:2.87},{sym:"RBCL",ltp:14449.9,chg:-0.28},{sym:"RBCLPO",ltp:11900,chg:-3.72},{sym:"SANIMA",ltp:368,chg:-0.11},{sym:"SBI",ltp:392.2,chg:1.34},{sym:"SBL",ltp:401,chg:-0.72},{sym:"SCB",ltp:657.1,chg:-0.21}],"HYDROPOWER":[{sym:"AHL",ltp:447.3,chg:-0.38},{sym:"AHPC",ltp:277,chg:-0.72},{sym:"AKJCL",ltp:362,chg:-1.09},{sym:"AKPL",ltp:267,chg:-1},{sym:"APHL",ltp:905,chg:1.91},{sym:"API",ltp:333.8,chg:-0.3},{sym:"BARUN",ltp:340,chg:-1.45},{sym:"BEDC",ltp:340,chg:0.77},{sym:"BHDC",ltp:442.9,chg:-0.07},{sym:"BHL",ltp:219,chg:-0.68},{sym:"BHPL",ltp:548.6,chg:-0.62},{sym:"BJHL",ltp:867.9,chg:-2.6},{sym:"BNHC",ltp:314.7,chg:0.06},{sym:"BPCL",ltp:659.9,chg:2.69},{sym:"CGH",ltp:792,chg:0.11},{sym:"CHCL",ltp:495.4,chg:-0.92},{sym:"CHL",ltp:267.1,chg:-0.34},{sym:"CKHL",ltp:665,chg:-0.08},{sym:"DHEL",ltp:621,chg:-1.43},{sym:"DHPL",ltp:302,chg:-0.07},{sym:"DOLTI",ltp:350,chg:-1.13},{sym:"DORDI",ltp:273.8,chg:-1.51},{sym:"EHPL",ltp:387.9,chg:-0.54},{sym:"ENL",ltp:880,chg:-0.52},{sym:"GHL",ltp:223,chg:0},{sym:"GLH",ltp:265,chg:-1.52},{sym:"GVL",ltp:490,chg:-0.41},{sym:"HDHPC",ltp:218.9,chg:-0.95},{sym:"HDL",ltp:1168,chg:-0.68},{sym:"HEI",ltp:565,chg:-0.88},{sym:"HEIP",ltp:320,chg:-0.22},{sym:"HPPL",ltp:363.8,chg:0.5},{sym:"HRL",ltp:661,chg:-0.5},{sym:"HURJA",ltp:252.5,chg:-0.98},{sym:"KHPL",ltp:757.6,chg:15},{sym:"KPCL",ltp:471.5,chg:-0.74},{sym:"LEC",ltp:212,chg:-0.24},{sym:"LSL",ltp:222,chg:1.37},{sym:"MABEL",ltp:689,chg:-4.17},{sym:"MCHL",ltp:304.8,chg:-0.07},{sym:"MEL",ltp:240,chg:-2.44},{sym:"MHCL",ltp:354,chg:-0.28},{sym:"MHL",ltp:500,chg:-1.19},{sym:"MHNL",ltp:245.6,chg:0.66},{sym:"MKHC",ltp:321,chg:0.16},{sym:"MKHL",ltp:515,chg:-0.39},{sym:"MKJC",ltp:503.5,chg:-0.24},{sym:"MMKJL",ltp:477,chg:0.21},{sym:"MSHL",ltp:690,chg:0.15},{sym:"NABBC",ltp:752,chg:-2.59},{sym:"NFS",ltp:583,chg:-0.1},{sym:"NGPL",ltp:439.9,chg:-0.41},{sym:"NHDL",ltp:641,chg:0.36},{sym:"NHPC",ltp:283.5,chg:-0.98},{sym:"NRM",ltp:330,chg:0.3},{sym:"NWCL",ltp:790,chg:-0.38},{sym:"NYADI",ltp:421,chg:-1.86},{sym:"OMPL",ltp:1010,chg:1},{sym:"PHCL",ltp:299.9,chg:-0.37},{sym:"PMHPL",ltp:338,chg:-1.34},{sym:"PPCL",ltp:386,chg:-1.03},{sym:"PPL",ltp:351,chg:0.29},{sym:"PURE",ltp:910,chg:-1.41},{sym:"RADHI",ltp:720,chg:-0.28},{sym:"RAWA",ltp:562,chg:-1.04},{sym:"RFPL",ltp:364.9,chg:-0.57},{sym:"RHGCL",ltp:285.9,chg:-1.92},{sym:"RHPL",ltp:274,chg:-0.72},{sym:"RIDI",ltp:333.6,chg:-0.71},{sym:"RLEL",ltp:928,chg:-3.83},{sym:"RURU",ltp:644.9,chg:0.45},{sym:"SAHAS",ltp:642,chg:-0.31},{sym:"SAIL",ltp:1057,chg:-2.85},{sym:"SGHC",ltp:338,chg:0.3},{sym:"SHINE",ltp:417,chg:0.24},{sym:"SHL",ltp:503.1,chg:-0.12},{sym:"SHPC",ltp:516,chg:0.02},{sym:"SIKLES",ltp:602.9,chg:0.65},{sym:"SINDU",ltp:721.9,chg:2.24},{sym:"SIPD",ltp:640,chg:-1.3},{sym:"SJCL",ltp:296,chg:-1.33},{sym:"SKHEL",ltp:985,chg:0.5},{sym:"SKHL",ltp:920.9,chg:-1.51},{sym:"SMHL",ltp:501,chg:-0.6},{sym:"SMJC",ltp:475,chg:0},{sym:"SOHL",ltp:655,chg:-0.76},{sym:"SONA",ltp:448,chg:0.9},{sym:"SPDL",ltp:398.3,chg:-0.67},{sym:"SPHL",ltp:632,chg:0.32},{sym:"SPIL",ltp:740.7,chg:0.64},{sym:"SPL",ltp:711,chg:1.51},{sym:"SSHL",ltp:201.1,chg:-1.61},{sym:"TAMOR",ltp:444,chg:-0.45},{sym:"TPC",ltp:360,chg:0.22},{sym:"TPKHL",ltp:596.6,chg:-3.49},{sym:"TSHL",ltp:435.1,chg:-2.22},{sym:"TTL",ltp:750,chg:0},{sym:"TVCL",ltp:494.8,chg:2.02},{sym:"UAIL",ltp:463.9,chg:-0.24},{sym:"UHEWA",ltp:587,chg:-0.51},{sym:"ULHC",ltp:496.8,chg:15},{sym:"UMHL",ltp:577.2,chg:-0.48},{sym:"UMRH",ltp:517.8,chg:-0.98},{sym:"UNHPL",ltp:388,chg:-1.27},{sym:"UPCL",ltp:372.6,chg:4.99},{sym:"UPPER",ltp:194,chg:-0.26},{sym:"USHEC",ltp:500,chg:1.63},{sym:"USHL",ltp:534.1,chg:-0.74},{sym:"YMHL",ltp:663.2,chg:-3.74}],"NON-LIFE INS":[{sym:"ALICL",ltp:459,chg:-0.22},{sym:"GCIL",ltp:418,chg:-1.3},{sym:"HATHY",ltp:705,chg:-1.25},{sym:"HLI",ltp:341.9,chg:-0.9},{sym:"IGI",ltp:460.7,chg:-0.07},{sym:"ILI",ltp:441.5,chg:-0.59},{sym:"NICL",ltp:563,chg:-0.35},{sym:"NICLBSL",ltp:552,chg:-1.06},{sym:"NIL",ltp:656.2,chg:-1.03},{sym:"NLG",ltp:647,chg:-1.97},{sym:"NRIC",ltp:1070,chg:-1.38},{sym:"PRIN",ltp:703,chg:-0.85},{sym:"RNLI",ltp:474.5,chg:-0.32},{sym:"SALICO",ltp:645,chg:2.06},{sym:"SGIC",ltp:501,chg:-0.5},{sym:"SICL",ltp:656.6,chg:1.33},{sym:"SJLIC",ltp:438,chg:-0.23},{sym:"SNLI",ltp:454,chg:-1.39}],"MICROFINANCE":[{sym:"ANLB",ltp:6673,chg:10.09},{sym:"AVYAN",ltp:1114.9,chg:0.17},{sym:"CBBL",ltp:910,chg:0},{sym:"FOWAD",ltp:970,chg:-1.01},{sym:"GMFBS",ltp:1297.9,chg:-0.08},{sym:"GMFIL",ltp:495.5,chg:2.59},{sym:"GMLI",ltp:1329,chg:-1.85},{sym:"NADEP",ltp:725,chg:0.69},{sym:"NMBMF",ltp:642,chg:-1.82},{sym:"NMFBS",ltp:1146,chg:0.53},{sym:"SMFBS",ltp:1520,chg:-0.98},{sym:"SWMF",ltp:665,chg:-0.89}],"FINANCE":[{sym:"BFC",ltp:514,chg:7.55},{sym:"BHCL",ltp:594,chg:-0.92},{sym:"CFCL",ltp:630,chg:2.62},{sym:"CLI",ltp:465.5,chg:-0.11},{sym:"GFCL",ltp:669,chg:1.36},{sym:"GILB",ltp:1070.1,chg:-2.18},{sym:"GLBSL",ltp:1835.8,chg:-0.16},{sym:"GUFL",ltp:558,chg:0},{sym:"ICFC",ltp:649,chg:1.41},{sym:"JFL",ltp:396,chg:-0.5},{sym:"MPFL",ltp:612,chg:0.33},{sym:"NESDO",ltp:1540,chg:0.33},{sym:"PFL",ltp:390,chg:4.28},{sym:"PMLI",ltp:455,chg:-0.66},{sym:"PROFL",ltp:439.5,chg:0.11},{sym:"RLFL",ltp:469.7,chg:-1.12},{sym:"SFCL",ltp:375.8,chg:0.51},{sym:"SIFC",ltp:572.6,chg:2.25},{sym:"SMPDA",ltp:833,chg:-0.6},{sym:"VLUCL",ltp:448,chg:-0.86}],"OTHERS":[{sym:"BGWT",ltp:656,chg:0.92},{sym:"CIT",ltp:1755,chg:-0.5},{sym:"HHL",ltp:339.8,chg:-0.06},{sym:"HIDCL",ltp:265,chg:-0.45},{sym:"HIDCLP",ltp:201.4,chg:-0.59},{sym:"HIMSTAR",ltp:780,chg:-1.76},{sym:"IHL",ltp:402,chg:-1.93},{sym:"JHAPA",ltp:1268.9,chg:-0.87},{sym:"JOSHI",ltp:278,chg:-1.28},{sym:"JSLBB",ltp:1095,chg:0},{sym:"KBSH",ltp:1410,chg:0},{sym:"KKHC",ltp:264,chg:-2.19},{sym:"MANDU",ltp:820,chg:-0.33},{sym:"MATRI",ltp:902,chg:-0.22},{sym:"MBJC",ltp:286,chg:-0.03},{sym:"MEHL",ltp:377.6,chg:-0.37},{sym:"MEN",ltp:575,chg:-0.52},{sym:"MERO",ltp:730.7,chg:-0.45},{sym:"MKCL",ltp:1267,chg:0.55},{sym:"MLBS",ltp:1166,chg:0.34},{sym:"NIFRA",ltp:261.5,chg:-0.57},{sym:"NMIC",ltp:958,chg:-0.73},{sym:"NRN",ltp:1419.9,chg:-0.5},{sym:"NSIF2",ltp:10.85,chg:0.93},{sym:"NTC",ltp:857,chg:-0.31},{sym:"NUBL",ltp:666,chg:0.54},{sym:"PCIL",ltp:780,chg:-1.17},{sym:"SABBL",ltp:1185,chg:-1.33},{sym:"SAGAR",ltp:1541.1,chg:-3.07},{sym:"SANVI",ltp:633,chg:0.48},{sym:"SHEL",ltp:314.3,chg:-0.54},{sym:"SMH",ltp:585.3,chg:-0.46},{sym:"SRLI",ltp:410,chg:2.53},{sym:"SWASTIK",ltp:2379,chg:0.3},{sym:"SYPNL",ltp:1355,chg:-0.15},{sym:"ULBSL",ltp:2798,chg:-0.25}],"MUTUAL FUND":[{sym:"C30MF",ltp:10.01,chg:-0.89},{sym:"CMF2",ltp:9.9,chg:2.17},{sym:"CSY",ltp:9.7,chg:3.3},{sym:"GBIMESY2",ltp:9.4,chg:-0.53},{sym:"GIBF1",ltp:11,chg:1.48},{sym:"GSY",ltp:10.02,chg:-0.1},{sym:"H8020",ltp:12.16,chg:0.5},{sym:"HLICF",ltp:8.92,chg:1.83},{sym:"KDBY",ltp:11.4,chg:0},{sym:"KEF",ltp:10.61,chg:0.47},{sym:"KSY",ltp:9.75,chg:0.52},{sym:"LUK",ltp:10,chg:-1.96},{sym:"LVF2",ltp:9.96,chg:-0.5},{sym:"MBLEF",ltp:10.2,chg:0.49},{sym:"MMF1",ltp:9.45,chg:0.32},{sym:"MNMF1",ltp:9.85,chg:-1.4},{sym:"NBF2",ltp:10.06,chg:0},{sym:"NBF3",ltp:10.03,chg:0.1},{sym:"NIBLGF",ltp:9.25,chg:0},{sym:"NIBLSTF",ltp:9.01,chg:-0.77},{sym:"NIBSF2",ltp:9.1,chg:0.89},{sym:"NICBF",ltp:9.3,chg:2.99},{sym:"NICFC",ltp:9.54,chg:0.42},{sym:"NICGF2",ltp:9.3,chg:-1.27},{sym:"NICSF",ltp:9.35,chg:0.65},{sym:"NMB50",ltp:10.5,chg:1.45},{sym:"NMBHF2",ltp:9.7,chg:-0.82},{sym:"NSY",ltp:9.69,chg:1.89},{sym:"PRSF",ltp:12.99,chg:-0.08},{sym:"PSF",ltp:11.88,chg:-0.17},{sym:"RBBF40",ltp:9.2,chg:0.77},{sym:"RMF1",ltp:9.86,chg:-1.4},{sym:"RMF2",ltp:10.35,chg:2.07},{sym:"RSY",ltp:10.33,chg:0.78},{sym:"SAGF",ltp:10.49,chg:2.84},{sym:"SBCF",ltp:9.9,chg:1.02},{sym:"SEF",ltp:9.97,chg:-1.29},{sym:"SFEF",ltp:10.02,chg:-1.67},{sym:"SFMF",ltp:10.8,chg:0},{sym:"SIGS2",ltp:10.8,chg:2.86},{sym:"SIGS3",ltp:10.6,chg:0.47},{sym:"SLCF",ltp:10.03,chg:-0.2}],"DEV BANK":[{sym:"CITY",ltp:401.8,chg:-0.3},{sym:"CORBL",ltp:1700,chg:-5.56},{sym:"DDBL",ltp:822.2,chg:-0.94},{sym:"EDBL",ltp:588.2,chg:-0.1},{sym:"FMDBL",ltp:763,chg:-0.2},{sym:"GBBL",ltp:416,chg:-0.45},{sym:"GRDBL",ltp:1048.9,chg:0.97},{sym:"JBBL",ltp:359.9,chg:-0.3},{sym:"KMCDB",ltp:871,chg:-0.11},{sym:"KSBBL",ltp:474,chg:-0.48},{sym:"LBBL",ltp:500,chg:0},{sym:"MLBBL",ltp:1209.5,chg:-0.03},{sym:"MLBL",ltp:367.5,chg:-0.65},{sym:"MNBBL",ltp:367.8,chg:-0.03},{sym:"NMLBBL",ltp:595.9,chg:0.66},{sym:"SADBL",ltp:409.9,chg:0.71},{sym:"SAPDBL",ltp:848,chg:2.11},{sym:"SKBBL",ltp:765.8,chg:-0.16},{sym:"SLBBL",ltp:830,chg:0},{sym:"SWBBL",ltp:697.8,chg:-0.6}],"LIFE INS":[{sym:"DLBS",ltp:1266,chg:-0.24},{sym:"GBLBS",ltp:750,chg:-0.53},{sym:"HLBSL",ltp:887.9,chg:1.42},{sym:"ILBS",ltp:896.8,chg:-0.02},{sym:"JBLB",ltp:1297,chg:-0.23},{sym:"LICN",ltp:818,chg:-0.24},{sym:"LLBS",ltp:920,chg:-1.5},{sym:"MLBSL",ltp:1790,chg:0.56},{sym:"MSLB",ltp:1228,chg:-1.37},{sym:"NLIC",ltp:744,chg:-0.13},{sym:"NLICL",ltp:595,chg:0.02},{sym:"SHLB",ltp:1528,chg:0.78},{sym:"SLBSL",ltp:1209,chg:0.17},{sym:"UNLB",ltp:1324.9,chg:-0.12},{sym:"USLB",ltp:1230,chg:-1.2},{sym:"VLBS",ltp:696,chg:1.59},{sym:"WNLB",ltp:1353,chg:-1.24}],"HTL & TOUR":[{sym:"KDL",ltp:834,chg:0.97},{sym:"OHL",ltp:680,chg:-0.29},{sym:"RSDC",ltp:652,chg:0.62},{sym:"SARBTM",ltp:808.8,chg:-0.64},{sym:"SNORL",ltp:600.6,chg:14.99},{sym:"SPC",ltp:459.9,chg:-0.24},{sym:"TRH",ltp:770,chg:0.92}]};
+function getScreenerLive(){
+  try{
+    var raw=localStorage.getItem('twv_screener_live');
+    return raw?JSON.parse(raw).data:null;
+  }catch(e){return null;}
+}
+function ensureSectorScrips(name){
+  var af=SECTOR_AUTOFILL[name];
+  if(!af||!af.length)return;
+  if(!SCRIPS[name])SCRIPS[name]=[];
+  var live=getScreenerLive();
+  var have={};
+  SCRIPS[name].forEach(function(s){have[s.sym]=s;});
+  af.forEach(function(s){
+    var ltp=s.ltp,chg=s.chg;
+    if(live&&live[s.sym]){ltp=live[s.sym].ltp;chg=live[s.sym].chg;}
+    if(!have[s.sym]){
+      SCRIPS[name].push({sym:s.sym,ltp:ltp,chg:chg});
+      have[s.sym]=true;
+    } else if(live&&live[s.sym]&&typeof have[s.sym]==='object'&&!have[s.sym].manualEdit){
+      // refresh an existing (previously auto-filled, not manually edited) entry with fresher live data
+      have[s.sym].ltp=ltp;have[s.sym].chg=chg;
+    }
+  });
+}
+SECTORS.forEach(s=>SCRIPS[s.name]=[]);
+
+SCRIPS['FINANCE']=[
+  {sym:'NFS',  ltp:629.40,chg:2.42},
+  {sym:'BFC',  ltp:529.00,chg:1.73},
+  {sym:'SIFC', ltp:565.00,chg:1.18},
+  {sym:'JFL',  ltp:421.00,chg:0.72},
+  {sym:'MPFL', ltp:648.00,chg:0.47},
+  {sym:'PFL',  ltp:385.00,chg:0.52},
+  {sym:'PROFL',ltp:465.00,chg:0.43},
+];
+SCRIPS['DEV BANK']=[
+  {sym:'SAPDBL',ltp:1015.00,chg:10.33},
+  {sym:'SINDU', ltp:750.00, chg:2.04},
+  {sym:'EDBL',  ltp:583.20, chg:1.25},
+  {sym:'GRDBL', ltp:1062.40,chg:0.61},
+  {sym:'SABBL', ltp:1152.00,chg:0.17},
+  {sym:'MNBBL', ltp:374.50, chg:0.13},
+  {sym:'LBBL',  ltp:493.40, chg:0.08},
+];
+SCRIPS['BANKING']=[
+  {sym:'NABIL',ltp:600,chg:-0.50},
+  {sym:'NICA', ltp:420,chg:-0.90},
+  {sym:'SBL',  ltp:540,chg: 0.10},
+];
+SCRIPS['HYDROPOWER']=[
+  {sym:'NHPC',ltp:288,chg:-0.30},
+  {sym:'RRHP',ltp:195,chg:-1.00},
+];
+SCRIPS['LIFE INS']=[
+  {sym:'NLIC',ltp:780, chg:-0.38},
+  {sym:'LICN',ltp:1100,chg:-0.45},
+];
+SCRIPS['MICROFINANCE']=[
+  {sym:'SMFDB',ltp:890,chg:-0.22},
+  {sym:'CBBL', ltp:820,chg:-0.60},
+];
+
+let currentLevel=1, selectedSec=null, qChart=null, activeTab='table';
+let l2Sort={col:'rs',dir:'desc'};
+
+// ── Link with QML: pull in whatever was last imported/saved there ──
+const DD_TO_QML={'BANKING':'BANKING','DEV BANK':'DEVBANK','FINANCE':'FINANCE','HTL & TOUR':'HOTELS',
+  'HYDROPOWER':'HYDROPOWER','INVESTMENT':'INVESTMENT','LIFE INS':'LIFEINSU','MFG & PROC':'MANUFACTURING',
+  'MICROFINANCE':'MICROFINANCE','MUTUAL FUND':'MUTUALFUND','NON-LIFE INS':'NONLIFEINSU','OTHERS':'OTHERS',
+  'TRADING':'TRADING'};
+function extractPct(chgStr){
+  if(chgStr===undefined||chgStr===null)return 0;
+  var s=chgStr.toString();
+  var m=s.match(/\(([-+]?[\d.]+)\s*%\)/); // e.g. "-33.28 (-1.21%)" -> -1.21
+  if(m)return parseFloat(m[1])||0;
+  var n=parseFloat(s.replace(/[^0-9.\-]/g,''));
+  return isNaN(n)?0:n;
+}
+function syncFromQML(){
+  try{
+    var raw=localStorage.getItem('twv_scrip_states');
+    if(!raw)return false;
+    var all=JSON.parse(raw);
+    var synced=0;
+    if(all.NEPSE){
+      NEPSE.close=all.NEPSE.close;
+      var chgNum=extractPct(all.NEPSE.chg);
+      NEPSE.chg=chgNum;
+      NEPSE_D.d10=chgNum;
+      synced++;
+    }
+    SECTORS.forEach(function(sec){
+      var qk=DD_TO_QML[sec.name];
+      if(qk&&all[qk]){
+        var st=all[qk];
+        var chgNum=extractPct(st.chg);
+        sec.d10={close:st.close,chg:chgNum};
+        synced++;
+      }
+    });
+    return synced>0;
+  }catch(e){return false;}
+}
+const ddSynced=syncFromQML();
+const sign=v=>v>=0?'+':'';
+const f2=v=>parseFloat(v).toFixed(2);
+
+function getPhase(rs,chg){
+  if(rs>=0&&chg>=0)return{l:'LEADING',  cls:'tag-lead',ltp:'ltp-lead',col:'#00ff99'};
+  if(rs>=0&&chg< 0)return{l:'WEAKENING',cls:'tag-weak',ltp:'ltp-weak',col:'#ffd700'};
+  if(rs< 0&&chg>=0)return{l:'IMPROVING',cls:'tag-imp', ltp:'ltp-imp', col:'#33ccff'};
+                   return{l:'LAGGING',  cls:'tag-lag', ltp:'ltp-lag', col:'#ff4444'};
+}
+
+function dayColor(chg){return chg>0?'#00ff99':chg<0?'#ff4444':'#778899';}
+function dayArrow(chg){return chg>0?'▲':chg<0?'▼':'─';}
+
+// ── SECTOR 3-DAY STRIP ──────────────────────────────────────────
+function buildSectorStrip(sec){
+  const days=[
+    {label:'DAY 1', key:'d8', nepseChg:-0.73},
+    {label:'DAY 2', key:'d9', nepseChg:-0.05},
+    {label:'TODAY', key:'d10', nepseChg:0.09, today:true},
+  ];
+  // trend arrow: comparing d10 vs d8 RS
+  const rs8=parseFloat((sec.d8.chg-(-0.73)).toFixed(2));
+  const rs10=parseFloat((sec.d10.chg-0.09).toFixed(2));
+  const trend=rs10>rs8?'▲ RS STRENGTHENING':'▼ RS WEAKENING';
+  const trendCol=rs10>rs8?'#00ff99':'#ff4444';
+
+  return `
+    <div class="strip-label">▸ ${sec.name} INDEX — 3 DAY TRACK
+      <span style="color:${trendCol};margin-left:8px;font-size:9px;">${trend}</span>
+    </div>
+    <div class="day-strip">
+      ${days.map(d=>{
+        const data=sec[d.key];
+        const rs=parseFloat((data.chg-d.nepseChg).toFixed(2));
+        const ph=getPhase(rs,data.chg);
+        const col=dayColor(data.chg);
+        return `<div class="day-card ${d.today?'today':''}">
+          <div class="dc-bar" style="width:100%;background:${col};"></div>
+          <div class="dc-label">${d.label}${d.today?` <span style="color:#f5c518;font-size:8px;">◀ TODAY</span>`:''}</div>
+          <div class="dc-val" style="color:${col};">${data.close.toLocaleString()}</div>
+          <div class="dc-chg" style="color:${col};">${dayArrow(data.chg)} ${sign(data.chg)}${f2(data.chg)}%</div>
+          <div class="dc-sub">
+            RS vs NEPSE: <span style="color:${ph.col};font-weight:700;">${sign(rs)}${f2(rs)}%</span><br>
+            Phase: <span class="tag ${ph.cls}" style="font-size:7px;padding:1px 5px;">${ph.l}</span>
+          </div>
+          <div class="dc-trend" style="color:${ph.col};">Ratio: ${(data.close/NEPSE.close).toFixed(4)}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ── BREADCRUMB ──────────────────────────────────────────────────
+function renderBreadcrumb(){
+  const bc=document.getElementById('breadcrumb');
+  let h=`<span class="bc ${currentLevel===1?'active':'link'}" onclick="goL1()">NEPSE INDEX</span>`;
+  if(currentLevel>=2&&selectedSec){
+    h+=`<span class="bc-sep">›</span>`;
+    h+=`<span class="bc ${currentLevel===2?'active':'link'}" onclick="goL2()">${selectedSec.name}</span>`;
+  }
+  bc.innerHTML=h;
+}
+
+// ── LEVEL 1 ─────────────────────────────────────────────────────
+function goL1(){currentLevel=1;selectedSec=null;activeTab='table';renderBreadcrumb();renderL1();}
+
+function renderL1(){
+  const sorted=[...SECTORS].sort((a,b)=>b.d10.chg-a.d10.chg);
+  const best=sorted[0], worst=sorted[sorted.length-1];
+  const green=SECTORS.filter(s=>s.d10.chg>0).length;
+  const outperform=SECTORS.filter(s=>s.d10.chg>NEPSE.chg).length;
+
+  document.getElementById('main-content').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#f5c518;letter-spacing:1.5px;">▸ LEVEL 1 — ALL SECTORS · TODAY</div>
+        <div style="font-size:9px;color:#3a5a6a;font-family:'Share Tech Mono',monospace;margin-top:2px;">Click any sector → see its 3-day strip + scrip drill-down</div>
+      </div>
+    </div>
+    <div class="sig-row">
+      <div class="sig"><div class="sl">BEST TODAY</div><div class="sv" style="color:#00ff99;">${best.abbr}</div><div class="ss" style="color:#00ff99;">${sign(best.d10.chg)}${f2(best.d10.chg)}%</div></div>
+      <div class="sig"><div class="sl">WORST TODAY</div><div class="sv" style="color:#ff4444;">${worst.abbr}</div><div class="ss" style="color:#ff4444;">${f2(worst.d10.chg)}%</div></div>
+      <div class="sig"><div class="sl">GREEN SECTORS</div><div class="sv" style="color:#00ff99;">${green}/13</div><div class="ss">today</div></div>
+      <div class="sig"><div class="sl">BEAT NEPSE</div><div class="sv" style="color:#ffd700;">${outperform}/13</div><div class="ss">outperform</div></div>
+    </div>
+    <div class="tabs">
+      <div class="tab ${activeTab==='table'?'on':''}" onclick="l1Tab('table',this)">▸ RATIO TABLE</div>
+      <div class="tab ${activeTab==='quad'?'on':''}" onclick="l1Tab('quad',this)">▸ ROTATION QUAD</div>
+      <div class="tab ${activeTab==='cards'?'on':''}" onclick="l1Tab('cards',this)">▸ SECTOR CARDS</div>
+    </div>
+    <div class="panel ${activeTab==='table'?'on':''}" id="p-table">${buildL1Table()}</div>
+    <div class="panel ${activeTab==='quad'?'on':''}" id="p-quad">
+      <div class="quad-box">
+        <div style="font-size:9px;color:#f5c518;letter-spacing:1.5px;margin-bottom:6px;">▸ X: RS vs NEPSE · Y: SECTOR CHG% · Click dot → drill</div>
+        <div style="position:relative;height:260px;"><canvas id="qc" role="img" aria-label="Sector quad"></canvas></div>
+        <div class="quad-leg">
+          <div class="ql"><div style="width:9px;height:9px;border-radius:50%;background:#00ff99;"></div><span style="color:#00ff99;">LEADING</span></div>
+          <div class="ql"><div style="width:9px;height:9px;border-radius:50%;background:#ffd700;"></div><span style="color:#ffd700;">WEAKENING</span></div>
+          <div class="ql"><div style="width:9px;height:9px;border-radius:50%;background:#ff4444;"></div><span style="color:#ff4444;">LAGGING</span></div>
+          <div class="ql"><div style="width:9px;height:9px;border-radius:50%;background:#33ccff;"></div><span style="color:#33ccff;">IMPROVING</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel ${activeTab==='cards'?'on':''}" id="p-cards">${buildSectorCards()}</div>`;
+  if(activeTab==='quad')setTimeout(renderL1Quad,60);
+}
+
+function buildL1Table(){
+  const sorted=[...SECTORS].sort((a,b)=>b.d10.chg-a.d10.chg);
+  const rows=sorted.map(s=>{
+    const rs10=parseFloat((s.d10.chg-NEPSE_D.d10).toFixed(2));
+    const rs9=parseFloat((s.d9.chg-NEPSE_D.d9).toFixed(2));
+    const rs8=parseFloat((s.d8.chg-NEPSE_D.d8).toFixed(2));
+    const ph=getPhase(rs10,s.d10.chg);
+    const bW=Math.min(44,Math.abs(rs10)/2*44);
+    const sc=(SCRIPS[s.name]||[]).length;
+    const trend=rs10>rs8?`<span style="color:#00ff99;font-size:9px;">▲</span>`:`<span style="color:#ff4444;font-size:9px;">▼</span>`;
+    return `<tr class="clickrow" onclick="drillSector('${s.name}')">
+      <td><span class="sym-cell">${s.name}</span></td>
+      <td style="font-family:'Share Tech Mono',monospace;font-size:9px;">
+        <span style="color:${dayColor(s.d8.chg)};">${sign(s.d8.chg)}${f2(s.d8.chg)}%</span>
+      </td>
+      <td style="font-family:'Share Tech Mono',monospace;font-size:9px;">
+        <span style="color:${dayColor(s.d9.chg)};">${sign(s.d9.chg)}${f2(s.d9.chg)}%</span>
+      </td>
+      <td style="font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:700;">
+        <span style="color:${dayColor(s.d10.chg)};">${sign(s.d10.chg)}${f2(s.d10.chg)}%</span>
+      </td>
+      <td>
+        <div class="rb-wrap">
+          <span class="${rs10>=0?'rs-pos':'rs-neg'}" style="min-width:40px;">${sign(rs10)}${f2(rs10)}%</span>
+          <div class="rb-track"><div class="rb-fill" style="width:${bW.toFixed(0)}px;background:${ph.col};height:5px;border-radius:2px;"></div></div>
+          ${trend}
+        </div>
+      </td>
+      <td style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#3a6a7a;">
+        J8:<span style="color:${rs8>=0?'#00e5a0':'#ff6060'};">${sign(rs8)}${f2(rs8)}</span>
+        J9:<span style="color:${rs9>=0?'#00e5a0':'#ff6060'};">${sign(rs9)}${f2(rs9)}</span>
+      </td>
+      <td><span class="tag ${ph.cls}">${ph.l}</span></td>
+      <td style="font-size:9px;color:${sc>0?'#4a8aaa':'#1a3a4a'};">${sc>0?`${sc} ▶`:'+ add'}</td>
+    </tr>`;
+  });
+  return `<div style="overflow-x:auto;"><table class="tbl"><thead><tr>
+    <th>SECTOR</th>
+    <th style="color:#ff6060;">DAY 1</th>
+    <th style="color:#ff8844;">DAY 2</th>
+    <th style="color:#00ff99;">TODAY ◀</th>
+    <th>RS vs NEPSE</th>
+    <th>3-DAY RS TREND</th>
+    <th>PHASE</th>
+    <th>SCRIPS ▶</th>
+  </tr></thead><tbody>${rows.join('')}</tbody></table></div>
+  <div style="font-size:8px;color:#2a4a5a;margin-top:5px;font-family:'Share Tech Mono',monospace;">▸ Click any row → sector 3-day strip + scrip analysis</div>`;
+}
+
+function buildSectorCards(){
+  const sorted=[...SECTORS].sort((a,b)=>b.d10.chg-a.d10.chg);
+  return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;">${sorted.map(s=>{
+    const rs=parseFloat((s.d10.chg-NEPSE_D.d10).toFixed(2));
+    const rs8=parseFloat((s.d8.chg-NEPSE_D.d8).toFixed(2));
+    const ph=getPhase(rs,s.d10.chg);
+    const sc=(SCRIPS[s.name]||[]).length;
+    const trend=rs>rs8?`<span style="color:#00ff99;font-size:8px;">▲ RS RISING</span>`:`<span style="color:#ff4444;font-size:8px;">▼ RS FADING</span>`;
+    return `<div style="background:#0d1520;border:1px solid ${sc>0?ph.col+'44':'#1a2535'};border-left:3px solid ${ph.col};border-radius:6px;padding:9px 10px;cursor:pointer;transition:all 0.2s;position:relative;" onclick="drillSector('${s.name}')">
+      <div style="font-size:9px;color:#8ab0c8;font-weight:600;margin-bottom:2px;">${s.name} <span style="color:#2a5a6a;font-size:7px;">(${sc})</span></div>
+      <div style="font-size:12px;font-family:'Share Tech Mono',monospace;color:${dayColor(s.d10.chg)};font-weight:700;">${sign(s.d10.chg)}${f2(s.d10.chg)}% <span style="font-size:9px;color:#3a5a6a;">today</span></div>
+      <div style="font-size:8px;font-family:'Share Tech Mono',monospace;color:#3a5a6a;margin-top:2px;">RS: <span style="color:${ph.col};">${sign(rs)}${f2(rs)}%</span> &nbsp; ${trend}</div>
+      <div style="display:flex;gap:6px;margin-top:4px;font-size:8px;font-family:'Share Tech Mono',monospace;">
+        <span style="color:#ff6060;">J8:${sign(s.d8.chg)}${f2(s.d8.chg)}%</span>
+        <span style="color:#ff8844;">J9:${sign(s.d9.chg)}${f2(s.d9.chg)}%</span>
+        <span style="color:#00ff99;">J10:${sign(s.d10.chg)}${f2(s.d10.chg)}%</span>
+      </div>
+      <div style="height:2px;border-radius:1px;margin-top:5px;background:${ph.col};width:${Math.min(100,Math.abs(s.d10.chg)/1.5*100)}%;"></div>
+      <span class="tag ${ph.cls}" style="font-size:7px;margin-top:4px;display:inline-block;">${ph.l}</span>
+      <div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:8px;color:#2a4a5a;">▶</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function l1Tab(name,el){
+  activeTab=name;
+  document.querySelectorAll('#main-content .tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('#main-content .panel').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('p-'+name).classList.add('on');
+  if(name==='quad')setTimeout(renderL1Quad,60);
+}
+
+function renderL1Quad(){
+  const ds=SECTORS.map(s=>{
+    const rs=parseFloat((s.d10.chg-NEPSE_D.d10).toFixed(3));
+    const ph=getPhase(rs,s.d10.chg);
+    return{label:s.abbr,sName:s.name,data:[{x:rs,y:s.d10.chg}],backgroundColor:ph.col+'bb',borderColor:ph.col,borderWidth:2,pointRadius:8,pointHoverRadius:11};
+  });
+  if(qChart)qChart.destroy();
+  const ctx=document.getElementById('qc');
+  ctx.style.width='100%';ctx.style.height='250px';
+  ctx.width=ctx.parentElement.offsetWidth||600;ctx.height=250;
+  qChart=new Chart(ctx,{type:'scatter',data:{datasets:ds},options:{
+    responsive:false,
+    onClick:(e,els)=>{if(els.length)drillSector(ds[els[0].datasetIndex].sName);},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: RS=${c.parsed.x.toFixed(2)}%  Chg=${c.parsed.y.toFixed(2)}% [click]`},backgroundColor:'#0a0e14',borderColor:'#1e2a38',borderWidth:1,bodyFont:{family:'Share Tech Mono',size:10}}},
+    scales:{
+      x:{grid:{color:'#0f1822'},ticks:{color:'#3a5a6a',font:{size:9,family:'Share Tech Mono'},callback:v=>v.toFixed(1)+'%'},title:{display:true,text:'RS vs NEPSE%',color:'#5a8aaa',font:{size:9}}},
+      y:{grid:{color:'#0f1822'},ticks:{color:'#3a5a6a',font:{size:9,family:'Share Tech Mono'},callback:v=>v.toFixed(1)+'%'},title:{display:true,text:'Sector CHG%',color:'#5a8aaa',font:{size:9}}}
+    }},
+    plugins:[{id:'ql',afterDatasetsDraw(c2){
+      const{ctx:c,chartArea:{left,right,top,bottom},scales}=c2;
+      const zx=scales.x.getPixelForValue(0),zy=scales.y.getPixelForValue(0);
+      c.save();c.strokeStyle='#f5c51828';c.lineWidth=1;c.setLineDash([4,3]);
+      c.beginPath();c.moveTo(zx,top);c.lineTo(zx,bottom);c.stroke();
+      c.beginPath();c.moveTo(left,zy);c.lineTo(right,zy);c.stroke();c.setLineDash([]);
+      c.font='8px Chakra Petch';
+      c.fillStyle='#00ff9912';c.fillText('LEADING',left+5,top+13);
+      c.fillStyle='#ffd70012';c.fillText('WEAKENING',zx+5,top+13);
+      c.fillStyle='#33ccff12';c.fillText('IMPROVING',left+5,bottom-5);
+      c.fillStyle='#ff444412';c.fillText('LAGGING',zx+5,bottom-5);
+      c.restore();
+    }},{id:'lbl',afterDatasetsDraw(c2){
+      const{ctx:c}=c2;
+      c2.data.datasets.forEach((d,i)=>{const m=c2.getDatasetMeta(i);if(m.data[0]){const p=m.data[0];c.font='bold 9px Chakra Petch';c.fillStyle=d.borderColor;c.fillText(d.label,p.x+9,p.y-4);}});
+    }}]
+  });
+}
+
+// ── LEVEL 2 ─────────────────────────────────────────────────────
+function drillSector(name){
+  selectedSec=SECTORS.find(s=>s.name===name);
+  ensureSectorScrips(name);
+  currentLevel=2;activeTab='table';l2Sort={col:'rs',dir:'desc'};
+  renderBreadcrumb();renderL2();
+}
+function goL2(){
+  if(selectedSec)ensureSectorScrips(selectedSec.name);
+  currentLevel=2;activeTab='table';renderBreadcrumb();renderL2();
+}
+
+function renderL2(){
+  const sec=selectedSec;
+  const scrips=SCRIPS[sec.name]||[];
+  const rs10=parseFloat((sec.d10.chg-NEPSE_D.d10).toFixed(2));
+  const secPh=getPhase(rs10,sec.d10.chg);
+
+  document.getElementById('main-content').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#f5c518;letter-spacing:1.5px;">▸ LEVEL 2 — ${sec.name}</div>
+        <div style="font-size:9px;color:#3a5a6a;font-family:'Share Tech Mono',monospace;margin-top:2px;">
+          Today RS: <span style="color:${secPh.col};">${sign(rs10)}${f2(rs10)}%</span> vs NEPSE · <span class="tag ${secPh.cls}" style="font-size:7px;">${secPh.l}</span>
+        </div>
+      </div>
+      <button class="back-btn" onclick="goL1()">◀ ALL SECTORS</button>
+    </div>
+
+    ${buildSectorStrip(sec)}
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
+      <div class="sig"><div class="sl">INDEX TODAY</div><div class="sv" style="color:#c8d8e8;">${sec.d10.close.toLocaleString()}</div></div>
+      <div class="sig"><div class="sl">CHG% TODAY</div><div class="sv ${sec.d10.chg>=0?'chg-pos':'chg-neg'}">${sign(sec.d10.chg)}${f2(sec.d10.chg)}%</div></div>
+      <div class="sig"><div class="sl">RS vs NEPSE</div><div class="sv ${rs10>=0?'rs-pos':'rs-neg'}">${sign(rs10)}${f2(rs10)}%</div></div>
+      <div class="sig"><div class="sl">SECT/NEPSE</div><div class="sv ratio-val">${(sec.d10.close/NEPSE.close).toFixed(3)}</div></div>
+    </div>
+
+    <div class="add-row">
+      <div class="add-title">▸ ADD SCRIP TO ${sec.name}</div>
+      <div class="add-fields">
+        <div class="ag"><div class="al">SYMBOL</div><input class="fi" id="s-sym" placeholder="e.g. NHPC" style="width:80px;" maxlength="10"/></div>
+        <div class="ag"><div class="al">LTP (Rs)</div><input class="fi" id="s-ltp" placeholder="288" type="number" style="width:72px;"/></div>
+        <div class="ag"><div class="al">CHG%</div><input class="fi" id="s-chg" placeholder="-0.30" type="number" step="0.01" style="width:65px;"/></div>
+        <div class="ag" style="justify-content:flex-end;"><button class="add-btn" onclick="addScripL2('${sec.name}')">＋ ADD</button></div>
+        <div style="font-size:8px;color:#3a6a7a;font-family:'Share Tech Mono',monospace;align-self:center;line-height:1.9;">✎ Click <span style="color:#f5c518;">LTP</span>/<span style="color:#f5c518;">CHG%</span> to edit</div>
+      </div>
+    </div>
+
+    <div id="l2-body">${buildL2Body(sec,scrips)}</div>`;
+}
+
+function buildL2Body(sec,scrips){
+  if(!scrips.length)return`<div class="no-scrip">▸ NO SCRIPS FOR ${sec.name}<br><span style="color:#2a5a6a;">Add scrips using the form above</span></div>`;
+  const en=scrips.map(s=>({...s,rs:parseFloat((s.chg-sec.d10.chg).toFixed(2)),rsN:parseFloat((s.chg-NEPSE_D.d10).toFixed(2)),ratio:(s.ltp/sec.d10.close).toFixed(4)}));
+  const best=en.reduce((a,b)=>a.rs>b.rs?a:b);
+  const worst=en.reduce((a,b)=>a.rs<b.rs?a:b);
+  const leaders=en.filter(s=>s.rs>=0&&s.chg>=0).length;
+  const vsN=en.filter(s=>s.chg>NEPSE_D.d10).length;
+  const maxAbsChg=Math.max(...en.map(s=>Math.abs(s.chg)),0.1);
+  const sortKey={ltp:s=>s.ltp,chg:s=>s.chg,rs:s=>s.rs,rsn:s=>s.rsN,ratio:s=>parseFloat(s.ratio)}[l2Sort.col]||(s=>s.rs);
+  const sorted=[...en].sort((a,b)=>(sortKey(a)-sortKey(b))*(l2Sort.dir==='asc'?1:-1));
+  const arrow=col=>l2Sort.col===col?(l2Sort.dir==='asc'?' \u25b2':' \u25bc'):'';
+  const th=(col,label)=>`<th class="sort-th" onclick="l2Sort2('${col}')" style="cursor:pointer;user-select:none;">${label}${arrow(col)}</th>`;
+  const tRows=sorted.map(s=>{
+    const ph=getPhase(s.rs,s.chg);
+    const bW=Math.min(40,Math.abs(s.rs)/3*40);
+    const heat=Math.min(1,Math.abs(s.chg)/maxAbsChg);
+    const chgBg=s.chg>0?`rgba(0,255,153,${(0.08+heat*0.22).toFixed(2)})`:s.chg<0?`rgba(255,68,68,${(0.08+heat*0.22).toFixed(2)})`:'transparent';
+    const chgArrow=s.chg>0?'\u25b2':s.chg<0?'\u25bc':'\u2015';
+    return `<tr id="row-${s.sym}">
+      <td><span class="sym-cell" style="cursor:pointer" onclick="goToScrip('${s.sym}')" title="Open in QML">${s.sym}</span></td>
+      <td class="edit-cell"><input class="ev ev-ltp ${ph.ltp}" value="${s.ltp.toLocaleString()}" type="text"
+        onclick="this.select()" onkeydown="onKey(event,'${s.sym}','${sec.name}',this,'ltp')" onblur="commit('${s.sym}','${sec.name}',this,'ltp')"/>
+        <span class="edit-hint">✎ edit</span></td>
+      <td class="edit-cell" style="background:${chgBg};border-radius:4px;">
+        <span style="font-size:9px;margin-right:2px;color:${s.chg>0?'#00ff99':s.chg<0?'#ff4444':'#5a7a8a'};">${chgArrow}</span>
+        <input class="ev ev-chg ${s.chg>=0?'chg-pos':s.chg<0?'chg-neg':'chg-neu'}" value="${f2(s.chg)}%" type="text"
+        onclick="this.select()" onkeydown="onKey(event,'${s.sym}','${sec.name}',this,'chg')" onblur="commit('${s.sym}','${sec.name}',this,'chg')"/>
+        <span class="edit-hint">✎ edit</span></td>
+      <td class="${sec.d10.chg>=0?'chg-pos':sec.d10.chg<0?'chg-neg':'chg-neu'}" style="font-family:'Share Tech Mono',monospace;">${sign(sec.d10.chg)}${f2(sec.d10.chg)}%</td>
+      <td><div class="rb-wrap">
+        <span class="rs-val ${s.rs>=0?'rs-pos':'rs-neg'}" style="min-width:40px;">${sign(s.rs)}${f2(s.rs)}%</span>
+        <div class="rb-track"><div class="rb-fill" style="width:${bW.toFixed(0)}px;background:${ph.col};height:5px;border-radius:2px;"></div></div>
+      </div></td>
+      <td><span class="rsn-val ${s.rsN>=0?'rs-pos':'rs-neg'}">${sign(s.rsN)}${f2(s.rsN)}%</span></td>
+      <td class="ratio-val">${s.ratio}</td>
+      <td><span class="tag phase-tag ${ph.cls}">${ph.l}</span></td>
+      <td><button class="del-btn" onclick="delScrip('${s.sym}','${sec.name}')">×</button></td>
+    </tr>`;
+  });
+  return `
+    <div class="sig-row">
+      <div class="sig"><div class="sl">BEST RS</div><div class="sv" style="color:#00ff99;">${best.sym}</div><div class="ss" style="color:#00ff99;">${sign(best.rs)}${best.rs.toFixed(2)}%</div></div>
+      <div class="sig"><div class="sl">WORST RS</div><div class="sv" style="color:#ff4444;">${worst.sym}</div><div class="ss" style="color:#ff4444;">${worst.rs.toFixed(2)}%</div></div>
+      <div class="sig"><div class="sl">LEADING</div><div class="sv" style="color:#00ff99;">${leaders}/${scrips.length}</div><div class="ss">scrips</div></div>
+      <div class="sig"><div class="sl">BEAT NEPSE</div><div class="sv" style="color:#ffd700;">${vsN}/${scrips.length}</div><div class="ss">scrips</div></div>
+    </div>
+    <div class="tabs">
+      <div class="tab on" onclick="l2Tab('table',this)">▸ RATIO TABLE</div>
+      <div class="tab" onclick="l2Tab('quad',this)">▸ ROTATION QUAD</div>
+      <div class="tab" onclick="l2Tab('bars',this)">▸ RANK BARS</div>
+    </div>
+    <div class="panel on" id="l2p-table">
+      <div style="font-size:8px;color:#3a6a7a;font-family:'Share Tech Mono',monospace;margin-bottom:5px;">✎ Click <span style="color:#f5c518;">LTP</span> or <span style="color:#f5c518;">CHG%</span> to edit · Enter = confirm &nbsp;|&nbsp; Click any column header to sort</div>
+      <div class="tbl-wrap"><table class="tbl"><thead><tr>
+        <th>SCRIP</th>${th('ltp','LTP')}${th('chg','CHG%')}
+        <th>${sec.abbr}%</th>${th('rs','RS vs SECT')}${th('rsn','RS vs NEPSE')}${th('ratio','LTP/INDEX')}<th>PHASE</th><th></th>
+      </tr></thead><tbody>${tRows.join('')}</tbody></table></div>
+    </div>
+    <div class="panel" id="l2p-quad"><div class="quad-box">
+      <div style="font-size:9px;color:#f5c518;letter-spacing:1.5px;margin-bottom:6px;">▸ X: RS vs ${sec.name} · Y: SCRIP CHG%</div>
+      <div style="position:relative;height:250px;"><canvas id="l2qc" role="img" aria-label="Scrip quad"></canvas></div>
+      <div class="quad-leg">
+        <div class="ql"><div style="width:8px;height:8px;border-radius:50%;background:#00ff99;"></div><span style="color:#00ff99;">LEADING</span></div>
+        <div class="ql"><div style="width:8px;height:8px;border-radius:50%;background:#ffd700;"></div><span style="color:#ffd700;">WEAKENING</span></div>
+        <div class="ql"><div style="width:8px;height:8px;border-radius:50%;background:#ff4444;"></div><span style="color:#ff4444;">LAGGING</span></div>
+        <div class="ql"><div style="width:8px;height:8px;border-radius:50%;background:#33ccff;"></div><span style="color:#33ccff;">IMPROVING</span></div>
+      </div>
+    </div></div>
+    <div class="panel" id="l2p-bars"><div class="rank-box" id="l2-bars-area"></div></div>`;
+}
+function l2Sort2(col){
+  if(l2Sort.col===col)l2Sort.dir=l2Sort.dir==='asc'?'desc':'asc';
+  else{l2Sort.col=col;l2Sort.dir='desc';}
+  document.getElementById('l2-body').innerHTML=buildL2Body(selectedSec,SCRIPS[selectedSec.name]||[]);
+}
+
+function l2Tab(name,el){
+  document.querySelectorAll('#l2-body .tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('#l2-body .panel').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');document.getElementById('l2p-'+name).classList.add('on');
+  if(name==='quad')setTimeout(renderL2Quad,60);
+  if(name==='bars')buildL2Bars();
+}
+
+function renderL2Quad(){
+  const sec=selectedSec;const scrips=SCRIPS[sec.name]||[];if(!scrips.length)return;
+  const ds=scrips.map(s=>{
+    const rs=parseFloat((s.chg-sec.d10.chg).toFixed(3));
+    const ph=getPhase(rs,s.chg);
+    return{label:s.sym,data:[{x:rs,y:s.chg}],backgroundColor:ph.col+'cc',borderColor:ph.col,borderWidth:2,pointRadius:9,pointHoverRadius:12};
+  });
+  if(qChart)qChart.destroy();
+  const ctx=document.getElementById('l2qc');
+  ctx.style.width='100%';ctx.style.height='240px';
+  ctx.width=ctx.parentElement.offsetWidth||600;ctx.height=240;
+  qChart=new Chart(ctx,{type:'scatter',data:{datasets:ds},options:{responsive:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const s=scrips.find(x=>x.sym===c.dataset.label);return `${c.dataset.label} · LTP:${s?s.ltp:''} · RS:${c.parsed.x.toFixed(2)}% · Chg:${c.parsed.y.toFixed(2)}%`;}},backgroundColor:'#0a0e14',borderColor:'#1e2a38',borderWidth:1,bodyFont:{family:'Share Tech Mono',size:10}}},
+    scales:{x:{grid:{color:'#0f1822'},ticks:{color:'#3a5a6a',font:{size:9,family:'Share Tech Mono'},callback:v=>v.toFixed(1)+'%'},title:{display:true,text:`RS vs ${sec.name}%`,color:'#5a8aaa',font:{size:9}}},
+    y:{grid:{color:'#0f1822'},ticks:{color:'#3a5a6a',font:{size:9,family:'Share Tech Mono'},callback:v=>v.toFixed(1)+'%'},title:{display:true,text:'Scrip CHG%',color:'#5a8aaa',font:{size:9}}}}},
+    plugins:[{id:'ql',afterDatasetsDraw(c2){const{ctx:c,chartArea:{left,right,top,bottom},scales}=c2;const zx=scales.x.getPixelForValue(0),zy=scales.y.getPixelForValue(0);c.save();c.strokeStyle='#f5c51828';c.lineWidth=1;c.setLineDash([4,3]);c.beginPath();c.moveTo(zx,top);c.lineTo(zx,bottom);c.stroke();c.beginPath();c.moveTo(left,zy);c.lineTo(right,zy);c.stroke();c.setLineDash([]);c.restore();}},
+    {id:'lbl',afterDatasetsDraw(c2){const{ctx:c}=c2;c2.data.datasets.forEach((d,i)=>{const m=c2.getDatasetMeta(i);if(m.data[0]){const p=m.data[0];c.font='bold 9px Chakra Petch';c.fillStyle=d.borderColor;c.fillText(d.label,p.x+10,p.y-4);}});}}]
+  });
+}
+
+function buildL2Bars(){
+  const sec=selectedSec;const sc=SCRIPS[sec.name]||[];const el=document.getElementById('l2-bars-area');
+  if(!sc.length){el.innerHTML=`<div class="no-scrip">No scrips</div>`;return;}
+  const en=sc.map(s=>({...s,rs:parseFloat((s.chg-sec.d10.chg).toFixed(2)),rsN:parseFloat((s.chg-NEPSE_D.d10).toFixed(2))})).sort((a,b)=>b.rs-a.rs);
+  const maxA=Math.max(...en.map(s=>Math.abs(s.rs)),0.1);
+  el.innerHTML=`<div style="font-size:9px;color:#f5c518;letter-spacing:1.5px;margin-bottom:10px;">▸ RANK BARS — RS vs ${sec.name} · BEST→WORST</div>`+
+  en.map((s,i)=>{
+    const ph=getPhase(s.rs,s.chg);
+    const bW=Math.abs(s.rs)/maxA*100;
+    return `<div class="rk-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;flex-wrap:wrap;gap:4px;">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <span style="font-size:9px;color:#3a5a6a;font-family:'Share Tech Mono',monospace;">#${i+1}</span>
+          <span style="font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:700;color:#c8d8e8;">${s.sym}</span>
+          <span class="${ph.ltp}" style="font-family:'Share Tech Mono',monospace;font-size:11px;font-weight:700;">Rs ${s.ltp.toLocaleString()}</span>
+          <span class="tag ${ph.cls}" style="font-size:7px;">${ph.l}</span>
+        </div>
+        <div style="font-size:9px;font-family:'Share Tech Mono',monospace;">
+          <span class="${s.chg>=0?'chg-pos':'chg-neg'}">${sign(s.chg)}${f2(s.chg)}%</span>
+          <span style="color:#2a4a5a;"> RS:</span><span style="color:${ph.col};font-weight:700;">${sign(s.rs)}${f2(s.rs)}%</span>
+          <span style="color:#2a4a5a;"> NEPSE:</span><span class="${s.rsN>=0?'rs-pos':'rs-neg'}">${sign(s.rsN)}${f2(s.rsN)}%</span>
+        </div>
+      </div>
+      <div style="background:#0a1220;border-radius:3px;height:8px;">
+        <div style="width:${bW.toFixed(1)}%;height:100%;border-radius:3px;background:${ph.col};opacity:0.85;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:8px;color:#3a5a6a;font-family:'Share Tech Mono',monospace;margin-top:2px;">
+        <span>LTP/IDX: ${(s.ltp/sec.d10.close).toFixed(4)}</span>
+        <span>${sec.abbr}: ${sign(sec.d10.chg)}${f2(sec.d10.chg)}% · NEPSE: +0.09%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getScrip(sym,sn){return(SCRIPS[sn]||[]).find(s=>s.sym===sym);}
+function goToScrip(sym){if(window.parent!==window){window.parent.postMessage({type:'gotoScrip',sym:sym},'*');}}
+function commit(sym,sn,el,field){
+  const raw=el.value.replace('%','').replace(/,/g,'').trim();
+  const val=parseFloat(raw);const s=getScrip(sym,sn);
+  if(isNaN(val)||!s){el.value=field==='ltp'?s.ltp.toLocaleString():f2(s.chg)+'%';return;}
+  s[field]=val;s.manualEdit=true;el.value=field==='ltp'?val.toLocaleString():f2(val)+'%';
+  const row=el.closest('tr');if(row){row.classList.remove('updated-flash');void row.offsetWidth;row.classList.add('updated-flash');}
+  refreshRow(sym,sn);
+}
+function onKey(e,sym,sn,el,field){if(e.key==='Enter'||e.key==='Tab'){e.preventDefault();commit(sym,sn,el,field);el.blur();}if(e.key==='Escape')el.blur();}
+function refreshRow(sym,sn){
+  const sec=SECTORS.find(s=>s.name===sn);const s=getScrip(sym,sn);if(!s||!sec)return;
+  const rs=parseFloat((s.chg-sec.d10.chg).toFixed(2));
+  const rsN=parseFloat((s.chg-NEPSE_D.d10).toFixed(2));
+  const ratio=(s.ltp/sec.d10.close).toFixed(4);
+  const ph=getPhase(rs,s.chg);const bW=Math.min(40,Math.abs(rs)/3*40);
+  const row=document.getElementById('row-'+sym);if(!row)return;
+  const le=row.querySelector('.ev-ltp');if(le){le.className=`ev ev-ltp ${ph.ltp}`;le.value=s.ltp.toLocaleString();}
+  const ce=row.querySelector('.ev-chg');if(ce){ce.className=`ev ev-chg ${s.chg>=0?'chg-pos':s.chg<0?'chg-neg':'chg-neu'}`;ce.value=f2(s.chg)+'%';}
+  const re=row.querySelector('.rs-val');if(re){re.className=`rs-val ${rs>=0?'rs-pos':'rs-neg'}`;re.textContent=sign(rs)+f2(rs)+'%';}
+  const bf=row.querySelector('.rb-fill');if(bf){bf.style.width=bW.toFixed(0)+'px';bf.style.background=ph.col;}
+  const rn=row.querySelector('.rsn-val');if(rn){rn.className=`rsn-val ${rsN>=0?'rs-pos':'rs-neg'}`;rn.textContent=sign(rsN)+f2(rsN)+'%';}
+  const rat=row.querySelector('.ratio-val');if(rat)rat.textContent=ratio;
+  const tag=row.querySelector('.phase-tag');if(tag){tag.className=`tag phase-tag ${ph.cls}`;tag.textContent=ph.l;}
+}
+function addScripL2(sn){
+  const sym=document.getElementById('s-sym').value.trim().toUpperCase();
+  const ltp=parseFloat(document.getElementById('s-ltp').value);
+  const chg=parseFloat(document.getElementById('s-chg').value);
+  if(!sym||isNaN(ltp)||isNaN(chg)){alert('Fill Symbol, LTP, CHG%');return;}
+  if((SCRIPS[sn]||[]).find(s=>s.sym===sym)){alert('Already added');return;}
+  SCRIPS[sn].push({sym,ltp,chg});
+  ['s-sym','s-ltp','s-chg'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('l2-body').innerHTML=buildL2Body(selectedSec,SCRIPS[sn]);
+}
+function delScrip(sym,sn){
+  SCRIPS[sn]=SCRIPS[sn].filter(s=>s.sym!==sym);
+  document.getElementById('l2-body').innerHTML=buildL2Body(selectedSec,SCRIPS[sn]);
+}
+
+function updateTodayCard(){
+  var vEl=document.getElementById('dc-today-val'),cEl=document.getElementById('dc-today-chg'),sEl=document.getElementById('dc-today-sub');
+  if(vEl)vEl.textContent=NEPSE.close.toLocaleString();
+  if(cEl){
+    var sign=NEPSE.chg>=0?'+':'';
+    cEl.textContent=(NEPSE.chg>=0?'\u25b2 ':'\u25bc ')+sign+NEPSE.chg+'%';
+    cEl.style.color=NEPSE.chg>=0?'#00ff99':'#ff4444';
+  }
+  try{
+    var br=localStorage.getItem('twv_sector_breadth');
+    var vol=(function(){try{return JSON.parse(localStorage.getItem('twv_scrip_states')||'{}').NEPSE.vol;}catch(e){return null;}})();
+    if(br&&sEl){
+      var b=JSON.parse(br);
+      sEl.innerHTML='ADV '+b.totalAdv+' \u00b7 DEC '+b.totalDec+' \u00b7 UNC '+b.totalUnc+(vol?'<br>VOL '+vol:'');
+    }
+  }catch(e){}
+}
+function updateHeaderNEPSE(){
+  var pEl=document.getElementById('hdr-nepse-price'),cEl=document.getElementById('hdr-nepse-chg');
+  if(pEl)pEl.textContent='NEPSE '+NEPSE.close.toLocaleString();
+  if(cEl){
+    cEl.textContent=(NEPSE.chg>=0?'\u25b2 +':'\u25bc ')+NEPSE.chg+'% TODAY';
+    cEl.style.color=NEPSE.chg>=0?'#00e5a0':'#ff4444';
+  }
+  var badge=document.getElementById('qml-link-badge');
+  if(badge)badge.style.display=ddSynced?'block':'none';
+}
+goL1();
+updateHeaderNEPSE();
+updateTodayCard();
+</script>
+
+</body>
+</html>
