@@ -95,6 +95,9 @@ tr:hover td{background:var(--color-background-secondary)}
 <div class="filters">
   <div class="fg"><i class="ti ti-building" style="font-size:11px"></i>
     <select id="f-sec" onchange="go()"><option value="">All Sectors</option><option>Commercial Banks</option><option>Development Banks</option><option>Finance</option><option>Hydropower</option><option>Life Insurance</option><option>Non-Life Insurance</option><option>Microfinance</option><option>Mutual Funds</option><option>Debentures</option><option>Manufacturing</option><option>Hotels & Tourism</option><option>Infrastructure</option><option>Others</option></select>
+    <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--color-text-secondary);cursor:pointer;padding:5px 8px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);">
+      <input type="checkbox" id="f-flagged-only" onchange="go()"> Flagged only <span id="flag-total" style="color:var(--color-text-info);"></span>
+    </label>
     <i class="ti ti-chevron-down" style="font-size:9px"></i>
   </div>
   <div class="fg"><i class="ti ti-trending-up" style="font-size:11px"></i>
@@ -132,6 +135,7 @@ tr:hover td{background:var(--color-background-secondary)}
 </div>
 <div class="tw"><table>
   <thead><tr>
+    <th style="width:24px;"><input type="checkbox" id="chk-all" onchange="toggleAllFlag(this.checked)" title="Select all on this page"></th>
     <th onclick="setSort('sym')">Symbol</th>
     <th onclick="setSort('ltp')">LTP</th>
     <th onclick="setSort('chg')">Chg%</th>
@@ -143,6 +147,13 @@ tr:hover td{background:var(--color-background-secondary)}
   </tr></thead>
   <tbody id="tbody"></tbody>
 </table></div>
+<div id="bulk-bar" style="display:none;margin-top:8px;padding:8px 10px;background:var(--color-background-info);border-radius:var(--border-radius-md);align-items:center;gap:8px;flex-wrap:wrap;">
+  <span id="bulk-count" style="font-size:11px;color:var(--color-text-primary);font-weight:600;"></span>
+  <span style="font-size:11px;color:var(--color-text-secondary);">Move to:</span>
+  <select id="bulk-sector-pick" style="padding:4px 8px;border-radius:6px;background:var(--color-background-secondary);color:var(--color-text-primary);border:1px solid var(--color-border-secondary);font-size:11px;"></select>
+  <button class="qml-btn" style="background:linear-gradient(135deg,#1a5c3a,#0d8f5c);border-color:#1e8a5a;color:#7ef7c8;" onclick="applyBulkSector()">Apply</button>
+  <button class="qml-btn" style="background:transparent;border-color:var(--color-border-secondary);color:var(--color-text-secondary);" onclick="clearFlags()">Clear selection</button>
+</div>
 <div class="pgr" id="pgr"></div>
 </div>
 <script>
@@ -170,6 +181,44 @@ function getSec(s){
   return SM[s]||'Others';
 }
 function goToScrip(sym){if(window.parent!==window){window.parent.postMessage({type:'gotoScrip',sym:sym},'*');}}
+function loadFlags(){try{return JSON.parse(localStorage.getItem('twv_flagged_scrips')||'{}');}catch(e){return{};}}
+function saveFlags(){localStorage.setItem('twv_flagged_scrips',JSON.stringify(FLAGGED));}
+var FLAGGED=loadFlags();
+function toggleFlag(sym,on){
+  if(on)FLAGGED[sym]=true;else delete FLAGGED[sym];
+  saveFlags();updateBulkBar();
+}
+function toggleAllFlag(on){
+  getFilteredStocks().forEach(function(s){if(on)FLAGGED[s.sym]=true;else delete FLAGGED[s.sym];});
+  saveFlags();go();
+}
+function clearFlags(){FLAGGED={};saveFlags();go();}
+function updateBulkBar(){
+  var n=Object.keys(FLAGGED).length;
+  var bar=document.getElementById('bulk-bar');
+  var cnt=document.getElementById('bulk-count');
+  var ft=document.getElementById('flag-total');
+  if(ft)ft.textContent=n?('('+n+')'):'';
+  if(!bar)return;
+  if(n>0){
+    bar.style.display='flex';
+    cnt.textContent=n+' scrip'+(n>1?'s':'')+' selected';
+    var pick=document.getElementById('bulk-sector-pick');
+    if(pick&&!pick.dataset.filled){
+      pick.innerHTML=Object.keys(SC).map(function(s){return'<option>'+s+'</option>';}).join('');
+      pick.dataset.filled='1';
+    }
+  } else bar.style.display='none';
+}
+function applyBulkSector(){
+  var sector=document.getElementById('bulk-sector-pick').value;
+  if(!sector)return;
+  Object.keys(FLAGGED).forEach(function(sym){
+    saveOverride(sym,sector);
+    STOCKS.forEach(function(s){if(s.sym===sym)s.sec=sector;});
+  });
+  clearFlags();
+}
 function editSector(sym,ev){
   ev.stopPropagation();
   var secs=Object.keys(SC);
@@ -360,7 +409,7 @@ function go(){
     const bc=pos>70?'#1D9E75':pos<30?'#D85A30':'#185FA5';
     let bvCell='<span style="color:var(--color-text-tertiary)">—</span>',pbvCell='<span style="color:var(--color-text-tertiary)">—</span>';
     if(s.bvps){const r=s.ltp/s.bvps;const[pb,pf]=pbvCol(r);bvCell=`${s.bvps.toLocaleString()}`;pbvCell=`<span class="pbv" style="background:${pb};color:${pf}">${r.toFixed(1)}x</span>`;}
-    return`<tr class="clickrow" onclick="goToScrip('${s.sym}')" style="cursor:pointer"><td><span class="sym">${s.sym}</span></td><td style="font-weight:500">${s.ltp.toLocaleString()}</td><td class="${cls}">${sign}${s.chg.toFixed(2)}%</td><td style="color:var(--color-text-secondary)">${fv(s.vol)}</td><td><div style="font-size:9px;color:var(--color-text-secondary)">${s.lo52.toLocaleString()} – ${s.hi52.toLocaleString()}</div><div class="bw"><div class="bf" style="width:${pos}%;background:${bc}"></div></div></td><td style="font-size:9px;color:var(--color-text-secondary)">${bvCell}</td><td>${pbvCell}</td><td style="color:var(--color-text-secondary)">${s.open.toLocaleString()}</td><td><span class="bdg" style="background:${bg};color:${fg};cursor:pointer" onclick="editSector('${s.sym}',event)" title="Click to edit sector">${s.sec} &#9998;</span></td></tr>`;
+    return`<tr class="clickrow" onclick="goToScrip('${s.sym}')" style="cursor:pointer"><td onclick="event.stopPropagation()"><input type="checkbox" ${FLAGGED[s.sym]?'checked':''} onchange="toggleFlag('${s.sym}',this.checked)"></td><td><span class="sym">${s.sym}</span></td><td style="font-weight:500">${s.ltp.toLocaleString()}</td><td class="${cls}">${sign}${s.chg.toFixed(2)}%</td><td style="color:var(--color-text-secondary)">${fv(s.vol)}</td><td><div style="font-size:9px;color:var(--color-text-secondary)">${s.lo52.toLocaleString()} – ${s.hi52.toLocaleString()}</div><div class="bw"><div class="bf" style="width:${pos}%;background:${bc}"></div></div></td><td style="font-size:9px;color:var(--color-text-secondary)">${bvCell}</td><td>${pbvCell}</td><td style="color:var(--color-text-secondary)">${s.open.toLocaleString()}</td><td><span class="bdg" style="background:${bg};color:${fg};cursor:pointer" onclick="editSector('${s.sym}',event)" title="Click to edit sector">${s.sec} &#9998;</span></td></tr>`;
   }).join('');
   document.getElementById('cnt').textContent=`${tot} scrips · page ${pg}/${pages}`;
   document.getElementById('pgr').innerHTML=pages>1?`<button onclick="gp(1)" ${pg===1?'disabled':''}>«</button><button onclick="gp(${pg-1})" ${pg===1?'disabled':''}>‹</button><span class="pi">Page ${pg} of ${pages}</span><button onclick="gp(${pg+1})" ${pg===pages?'disabled':''}>›</button><button onclick="gp(${pages})" ${pg===pages?'disabled':''}>»</button>`:'';

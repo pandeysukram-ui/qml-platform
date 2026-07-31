@@ -3933,6 +3933,17 @@ function normalizeTickerName(raw){
   if(TICKER_ALIASES[up])return TICKER_ALIASES[up];
   return up; // fall through \u2014 parseIdxCSV skips it if presets[up] is still undefined
 }
+function splitCSVLine(line){
+  var out=[],cur='',inQ=false;
+  for(var i=0;i<line.length;i++){
+    var ch=line[i];
+    if(ch==='"'){inQ=!inQ;}
+    else if(ch===','&&!inQ){out.push(cur);cur='';}
+    else{cur+=ch;}
+  }
+  out.push(cur);
+  return out.map(function(c){return c.replace(/,/g,'');}); // strip thousands-separator commas left inside numbers
+}
 function parseIdxCSV(file){
   var status=document.getElementById('idx-csv-status');
   status.textContent='Reading...';
@@ -3940,12 +3951,12 @@ function parseIdxCSV(file){
   reader.onload=function(e){
     try{
       var lines=e.target.result.split('\n').filter(function(l){return l.trim();});
-      var header=lines[0].split(',').map(function(h){return h.trim().toLowerCase();});
+      var header=splitCSVLine(lines[0]).map(function(h){return h.trim().toLowerCase();});
       var col={};
       header.forEach(function(h,i){col[h]=i;});
       var count=0;
       lines.slice(1).forEach(function(line){
-        var p=line.split(',');
+        var p=splitCSVLine(line);
         var tickerRaw=(p[col['ticker']]||'').trim();
         var ticker=normalizeTickerName(tickerRaw);
         if(!ticker||!presets[ticker])return;
