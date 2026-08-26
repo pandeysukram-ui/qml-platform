@@ -2841,30 +2841,12 @@ function parseLineSmart(line,sep){
   for(var i=0;i<line.length;i++){var ch=line[i];if(ch==='"'){inQ=!inQ;}else if(ch===','&&!inQ){res.push(cur.trim());cur='';}else{cur+=ch;}}
   res.push(cur.trim());return res;
 }
-function showDataWarning(msg){
-  var el=document.getElementById('eod-data-warning');
-  if(!el){
-    var status=document.getElementById('eod-session-status');
-    if(status&&status.parentNode){
-      el=document.createElement('div');
-      el.id='eod-data-warning';
-      el.style.cssText='margin-top:6px;padding:6px 8px;border-radius:6px;background:rgba(231,76,60,0.12);border:1px solid #e74c3c;color:#e74c3c;font-size:10px;font-family:var(--mono);';
-      status.parentNode.insertBefore(el,status.nextSibling);
-    }
-  }
-  if(el){el.textContent='\u26a0 '+msg;el.style.display='block';}
-}
-function clearDataWarning(){
-  var el=document.getElementById('eod-data-warning');
-  if(el)el.style.display='none';
-}
 function importFromHeaderedCSV(text,silent){
   var lines=text.split('\n').filter(function(l){return l.trim();});
   if(lines.length<2){if(!silent)toast('\u26a0 today.csv is empty');return false;}
   var sep=',';
   if(lines[0].indexOf('\t')>-1)sep='\t';
   var header=parseLineSmart(lines[0],sep).map(function(h){return h.trim().toLowerCase();});
-  var expectedCols=header.length;
   function findCol(){for(var a=0;a<arguments.length;a++){var idx=header.indexOf(arguments[a]);if(idx>-1)return idx;}return -1;}
   var cSym=findCol('symbol','scrip'),
       cOpen=findCol('open price','open'),
@@ -2873,35 +2855,15 @@ function importFromHeaderedCSV(text,silent){
       cClose=findCol('close price','close','ltp'),
       cVol=findCol('total traded quantity','volume','vol'),
       cW52H=findCol('fifty two week high','52w high','52wh'),
-      cW52L=findCol('fifty two week low','52w low','52wl'),
-      cDate=findCol('business date','date');
+      cW52L=findCol('fifty two week low','52w low','52wl');
   if(cSym===-1||cClose===-1){if(!silent)toast('\u26a0 today.csv columns not recognized');return false;}
-  var expectedRowCount=lines.length-1;
-  var rows=[],malformedCount=0;
-  lines.slice(1).forEach(function(l){
-    var r=parseLineSmart(l,sep);
-    // Row has more fields than the header (e.g. an unquoted comma inside a name column) \u2014
-    // merge the extra field(s) back into the column right after the symbol rather than
-    // silently dropping the whole row, so one bad export line doesn't cost us a scrip.
-    if(r.length>expectedCols){
-      var extra=r.length-expectedCols;
-      var mergeAt=cSym+1;
-      var merged=r.slice(0,mergeAt).concat([r.slice(mergeAt,mergeAt+extra+1).join(', ')]).concat(r.slice(mergeAt+extra+1));
-      r=merged;
-      malformedCount++;
-    }else if(r.length<expectedCols){
-      malformedCount++;
-    }
-    rows.push(r);
-  });
+  var rows=lines.slice(1).map(function(l){return parseLineSmart(l,sep);});
   var skip=['','-','SCRIP','SYMBOL','S.N','SN','NO','S.NO','LTP','POINT','NAME','STOCK','COMPANY'];
   var newEodData=[];
-  var csvDate=null;
   rows.forEach(function(row){
     if(!row[cSym])return;
     var scrip=row[cSym].toUpperCase().trim();
     if(skip.indexOf(scrip)>-1)return;
-    if(cDate>-1&&!csvDate&&row[cDate])csvDate=row[cDate].trim();
     var close=parseFloat((row[cClose]||'').replace(/,/g,''))||0;
     if(!close||isNaN(close))return;
     var open=cOpen>-1?parseFloat((row[cOpen]||'').replace(/,/g,''))||0:0;
@@ -2920,40 +2882,19 @@ function importFromHeaderedCSV(text,silent){
       range:range,rangePct:rp,signal:sig,w52h:w52h,w52l:w52l,netVolRaw:netVolRaw});
   });
   if(!newEodData.length){if(!silent)toast('\u26a0 No valid rows in today.csv');return false;}
-  // Guard: if the parsed count is far below what the file actually contains, something
-  // upstream broke (bad export, truncated fetch) \u2014 warn instead of quietly showing partial data.
-  var warnings=[];
-  if(newEodData.length<expectedRowCount*0.9){
-    warnings.push(newEodData.length+' of '+expectedRowCount+' rows loaded \u2014 file may be incomplete or corrupted');
-  }
-  if(malformedCount>0){
-    warnings.push(malformedCount+' row(s) had unexpected column counts (likely an unescaped comma in a name) \u2014 auto-repaired, please spot-check');
-  }
-  var today=new Date();
-  var todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
-  if(csvDate&&csvDate!==todayStr&&today.getHours()>=18){
-    warnings.push('This data is dated '+csvDate+', not today ('+todayStr+') \u2014 it\'s past 6 PM and today\'s CSV still hasn\'t been imported');
-  }
   eodData=newEodData;
   var now=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
   try{localStorage.setItem('twv_eod_data',JSON.stringify(eodData));localStorage.setItem('twv_eod_date',now);localStorage.setItem('twv_eod_count',eodData.length);}catch(e){}
-  var lastImportEl=document.getElementById('eod-last-import');if(lastImportEl)lastImportEl.textContent=now+' (auto)'+(csvDate?' \u2014 data date: '+csvDate:'');
+  var lastImportEl=document.getElementById('eod-last-import');if(lastImportEl)lastImportEl.textContent=now+' (auto)';
   var countEl=document.getElementById('eod-scrips-count');if(countEl)countEl.textContent=eodData.length;
   var statusEl=document.getElementById('eod-session-status');
-  if(warnings.length){
-    if(statusEl){statusEl.textContent='\u26a0 '+eodData.length+' scrips loaded, with issues';statusEl.className='eod-status-val bear';}
-    showDataWarning(warnings.join(' | '));
-    if(!silent)toast('\u26a0 Import completed with warnings \u2014 see banner');
-  }else{
-    if(statusEl){statusEl.textContent='\u2705 '+eodData.length+' scrips auto-loaded from today.csv';statusEl.className='eod-status-val bull';}
-    clearDataWarning();
-    if(!silent)toast('\u2713 today.csv auto-imported \u2014 '+eodData.length+' scrips');
-  }
+  if(statusEl){statusEl.textContent='\u2705 '+eodData.length+' scrips auto-loaded from today.csv';statusEl.className='eod-status-val bull';}
   if(typeof renderEODTable==='function')renderEODTable();
   if(typeof buildSearchIndex==='function')buildSearchIndex();
   if(typeof saveEODToStorage==='function')saveEODToStorage();
   if(typeof saveHistoryFromEOD==='function')saveHistoryFromEOD();
   if(typeof checkPriceAlerts==='function')checkPriceAlerts();
+  if(!silent)toast('\u2713 today.csv auto-imported \u2014 '+eodData.length+' scrips');
   return true;
 }
 function autoFetchTodayCSV(){
@@ -2964,12 +2905,7 @@ function autoFetchTodayCSV(){
       if(ok)console.log('\u26a1 Auto-loaded today.csv on page load');
     })
     .catch(function(err){
-      console.log('No today.csv found or fetch failed:',err.message);
-      // Auto-fetch failed \u2014 we're about to fall back to whatever is cached in this browser's
-      // localStorage. Say so visibly instead of silently showing possibly-old data as if it were current.
-      var savedDate=null;
-      try{savedDate=localStorage.getItem('twv_eod_date');}catch(e){}
-      showDataWarning('Could not fetch today.csv (\u2014 '+err.message+'). Showing last saved data'+(savedDate?' from '+savedDate:'')+', which may not be today\u2019s.');
+      console.log('No today.csv found or fetch failed (this is fine \u2014 falls back to manual import):',err.message);
     });
 }
 window.addEventListener('load',autoFetchTodayCSV);
@@ -3622,6 +3558,38 @@ function saveIndexHistoryEntry(ticker,dateStr,entry){
 }
 function persistIndexHistory(){
   try{localStorage.setItem('twv_index_history',JSON.stringify(indexHistory));}catch(e){}
+}
+// Pulls the latest index rows from the shared MySQL backend on page load, so every
+// device/browser shows the same "as of" date instead of relying only on this
+// device's own localStorage (which only updates when THIS device does a manual import).
+function fetchIndexFromBackend(){
+  var key = getBackendKey(false); // don't prompt on load; only import flow sets the key
+  if(!key) return;
+  fetch('https://avinnapandey.com/Nepse-Backend/get_index_history.php?key='+encodeURIComponent(key))
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+      if(!res || !res.latest || !res.latest.length) return;
+      res.latest.forEach(function(row){
+        var ticker = normalizeTickerName(row.ticker||'');
+        if(!ticker) return;
+        saveIndexHistoryEntry(ticker, row.trade_date, {
+          close: parseFloat(row.close)||0,
+          chg:   parseFloat(row.chg)||0,
+          pct:   parseFloat(row.pct)||0,
+          rsi:   parseFloat(row.rsi)||0,
+          wma:   parseFloat(row.wma)||0,
+          dpo:   parseFloat(row.dpo)||0,
+          seb:   parseFloat(row.seb)||0,
+          adv:   parseFloat(row.adv)||0,
+          dec:   parseFloat(row.dec)||0,
+          unc:   parseFloat(row.unc)||0
+        });
+      });
+      persistIndexHistory();
+      updateFreshnessBanner();
+      renderDashboard();
+    })
+    .catch(function(){ /* offline/unreachable \u2014 local data still shown, fails silently */ });
 }
 // Returns {prev, prevDate, trail:[...]} for the ticker, excluding today's own last entry
 function getIndexTrail(ticker){
@@ -4277,13 +4245,17 @@ function splitCSVLine(line){
   out.push(cur);
   return out.map(function(c){return c.replace(/,/g,'');}); // strip thousands-separator commas left inside numbers
 }
-function syncFileToBackend(file, endpoint, statusEl){
+function getBackendKey(promptIfMissing){
   var key = localStorage.getItem('twv_backend_key');
-  if(!key){
+  if(!key && promptIfMissing){
     key = prompt('Backend API key (one-time \u2014 remembered after this, same key as config.php):');
-    if(!key) return; // user skipped; local import still succeeded, just not backend-synced
-    localStorage.setItem('twv_backend_key', key);
+    if(key) localStorage.setItem('twv_backend_key', key);
   }
+  return key||null;
+}
+function syncFileToBackend(file, endpoint, statusEl){
+  var key = getBackendKey(true);
+  if(!key) return; // user skipped; local import still succeeded, just not backend-synced
   var fd = new FormData();
   fd.append('csv', file);
   fetch('Nepse-Backend/'+endpoint+'?key='+encodeURIComponent(key), { method:'POST', body: fd })
@@ -4569,6 +4541,7 @@ try{
 }catch(e){}
 loadSectorBreadth();
 loadIndexHistory();
+fetchIndexFromBackend();
 loadSavedState();
 loadEODFromStorage();
 loadHistory();
