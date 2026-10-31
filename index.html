@@ -2,7 +2,7 @@
 <!-- saved from url=(0059)file:///C:/Users/DELL/Downloads/trade_with_vibes_suite.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
-<title>Trade With Vibes — Suite v20</title>
+<title>Trade With Vibes — Suite v21</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -40,6 +40,7 @@ iframe.active{display:block}
   <div class="tab" data-tab="brd" onclick="showTab(&#39;brd&#39;)">MKT BREADTH</div>
   <div class="tab" data-tab="hm" onclick="showTab(&#39;hm&#39;)">HARMONIC</div>
   <label class="tab" style="cursor:pointer;margin-left:10px;color:#39FF7A">&#128194; LOAD BACKUP .json<input type="file" id="bkInput" accept=".json" style="display:none" onchange="twvLoadBackup(event)"></label>
+  <div class="tab" id="driveBtn" onclick="twvLoadDrive(event)" title="Load backup from your Google Drive link (Shift+click = change link)" style="cursor:pointer;color:#4ADEFF">&#9729; DRIVE</div>
   <input id="scripSearch" list="scripList" placeholder="search: HDL, SCB…" autocomplete="off" spellcheck="false" onfocus="this.select()" onchange="twvSearchScrip(this.value)" onkeydown="if(event.key==='Enter'){twvSearchScrip(this.value);}" style="display:none;width:104px;font-family:'Share Tech Mono',monospace;font-size:11px;text-transform:uppercase;background:#0C1520;color:#D4E8FF;border:1px solid rgba(0,229,255,.35);padding:6px;border-radius:4px"><datalist id="scripList"></datalist>
   <select id="scripPick" onchange="twvPickScrip(this.value)" style="display:none;font-family:'Share Tech Mono',monospace;font-size:10px;background:#0C1520;color:#D4E8FF;border:1px solid rgba(0,229,255,.18);padding:6px;border-radius:4px"></select>
   <div class="tab zb" onclick="twvZoom(-0.1)" title="Smaller (this tab only)">A&minus;</div><div class="tab zb" id="zoomLbl" onclick="twvZoom(0)" title="Reset this tab to 125%">125%</div><div class="tab zb" onclick="twvZoom(0.1)" title="Bigger (this tab only)">A+</div>
@@ -259,6 +260,39 @@ function twvApplyBackup(bk, fromSaved){
   document.getElementById('scripList').innerHTML = syms.filter(x=>TWV_BK.data[x].length>=30).sort().map(x=>'<option value="'+x+'">').join('');
   document.getElementById('scripSearch').style.display = '';
   showToast((fromSaved?'Saved backup auto-loaded: ':'')+syms.length+' scrips → FQ + Breadth + Harmonic · '+TWV_BK.fixed+' opens adjusted · '+TWV_BK.skipped.length+' stubs skipped' + (TWV_BK.deadDates.length ? ' · no-data day ' + TWV_BK.deadDates.join(', ') + ' ignored (' + TWV_BK.droppedFill + ' placeholder bars)' : ''));
+}
+
+// ===== Google Drive backup loader (one tap after the first time; the link is remembered) =====
+const TWV_DRIVE_KEY = '';   // paste the Google API key between the quotes (see README step 3)
+function twvDriveId(u){
+  u = String(u || '').trim();
+  const m = /\/d\/([A-Za-z0-9_-]{15,})/.exec(u) || /[?&]id=([A-Za-z0-9_-]{15,})/.exec(u);
+  if(m) return m[1];
+  return /^[A-Za-z0-9_-]{15,}$/.test(u) ? u : null;
+}
+async function twvLoadDrive(ev){
+  let link = ''; try{ link = localStorage.getItem('twv_drive_link') || ''; }catch(e){}
+  if(!link || (ev && (ev.shiftKey || ev.ctrlKey))){
+    const v = prompt('Google Drive ma backup .json ko share link paste garnus\n(Share -> "Anyone with the link" -> Copy link)', link);
+    if(!v) return; link = v.trim(); try{ localStorage.setItem('twv_drive_link', link); }catch(e){}
+  }
+  const id = twvDriveId(link);
+  if(!id){ showToast('Drive link bujhina — Shift+click gari pheri halnus'); return; }
+  if(!TWV_DRIVE_KEY){ showToast('Drive API key halna baaki chha (README step 3). Tya samma LOAD BACKUP thichnus, phone ma Drive pani dekhincha'); return; }
+  showToast('Drive bata load huda…');
+  try{
+    const r = await fetch('https://www.googleapis.com/drive/v3/files/' + id + '?alt=media&key=' + encodeURIComponent(TWV_DRIVE_KEY));
+    if(!r.ok){
+      showToast('Drive error ' + r.status + ' — file "Anyone with the link" share chha? key thik chha?');
+      if((r.status === 404 || r.status === 403) && confirm('Drive link galat ya private jasto chha. Naya link halne?')){ try{ localStorage.removeItem('twv_drive_link'); }catch(e){} return twvLoadDrive({}); }
+      return;
+    }
+    const txt = await r.text(); let bk;
+    try{ bk = JSON.parse(txt); }catch(e){ showToast('Drive file JSON hoina'); return; }
+    if(!bk.LIB){ showToast('Yo reversal backup hoina (LIB chaina)'); return; }
+    twvApplyBackup(bk, false);
+    twvIdb('readwrite', s => s.put(txt, 'backup')).catch(()=>{});
+  }catch(e){ showToast('Internet / Drive problem: ' + (e.message || e)); }
 }
 function twvLoadBackup(ev){
   const f = ev.target.files[0]; if(!f) return;
